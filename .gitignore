@@ -79,7 +79,6 @@ cmake_install.cmake
 *Makefile*
 .deps
 *install_manifest.txt
-include
 
 #--------------- DOXYFILE
 doc/html

@@ -1,4 +1,4 @@
-#include "DSTCore/DSS_version.h" //update as appropriate
+#include "DSS_version.h" //update as appropriate
 
 // Namespace DSS stand For DeepSkySys.
 namespace DSS
@@ -14,7 +14,7 @@ namespace DSS
   {
   }
 
-  const std::string gGIT::version() const
+  const std::string gGIT::version()
   {
     if(this_ver == NULL)
       gGIT::this_ver = new gGIT();
@@ -22,7 +22,7 @@ namespace DSS
     return this_ver->_VERSION;
   }
 
-  const std::string gGIT::version_short() const
+  const std::string gGIT::version_short()
   {
     if(this_ver == NULL)
       gGIT::this_ver = new gGIT();
@@ -30,7 +30,7 @@ namespace DSS
     return this_ver->_VERSION_SHORT;
   }
 
-  const std::string gGIT::sha1() const
+  const std::string gGIT::sha1()
   {
     if(this_ver == NULL)
       gGIT::this_ver = new gGIT();

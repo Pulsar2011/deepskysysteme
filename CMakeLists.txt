@@ -34,9 +34,8 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${DeepSkyROOT}" CACHE PATH "default install path" FORCE)
 endif()
 
-set(EXECUTABLE_OUTPUT_PATH ./exe/)
-set(LIBRARY_OUTPUT_PATH ./lib/)
-set(LIBRARY_OUTPUT_PATH ./lib/)
+set(EXECUTABLE_OUTPUT_PATH ./build/exe/)
+set(LIBRARY_OUTPUT_PATH ./build/lib/)
 
 #-------------------- CMAKE Configuration
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
@@ -72,7 +71,6 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 	set(OperatingSystem "Linux")
 	ADD_DEFINITIONS(-DLinuxx86_64)
-	set(CMAKE_PREFIX_PATH "${Qt5_ROOT}/lib/cmake/Qt5")
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 #-------------------- DARWIN specifics
@@ -84,10 +82,6 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(OperatingSystem "Mac OS X")
 	ADD_DEFINITIONS(-DDarwinx86_64)
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-
-
-#-------------------- ADD ADDITIONAL SEARCH PATH
-set(INCLUDE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/../include/)
 
 option(WITH_DEBUG "Activate debug mode" OFF)
 if(WITH_DEBUG)
@@ -126,7 +120,7 @@ set(version_file "${CMAKE_CURRENT_BINARY_DIR}/src/DSS_version.cxx")
 
 #-------------------- Inclusion des en-têtes publics
 
-INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/. ./include)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/. ./include/DSTCore)
 link_directories(${LIBRARY_OUTPUT_PATH})
 
 message("-- PROJECT BINARY DIR: "${PROJECT_BINARY_DIR})
@@ -140,7 +134,7 @@ set(CMAKE_LIBRARY_PATH "${GSL_LIBRARY_DIRS}" ${CMAKE_LIBRARY_PATH})
 #-------------------- LIST SOURCE FILE
 
 file(GLOB CORE_SRC "src/*.cxx")
-file(GLOB CORE_HEADER "include/*.h")
+file(GLOB CORE_HEADER "include/DSTCore/*.h")
 file(GLOB TEST_SRC "test/*.cxx")
 
 set(HEADER_FILES ${CORE_HEADER})
@@ -157,8 +151,6 @@ add_library(
     ${version_file}
 )
 
-target_link_libraries( DSTCore ${ROOT_LIBRARIES})
-
 #-------------------- Configuration des test
 foreach( test_source_file ${TEST_SRC} )
 	get_filename_component( tSRC ${test_source_file} NAME_WE)
@@ -167,22 +159,9 @@ foreach( test_source_file ${TEST_SRC} )
 		${test_source_file}
 	)
 
-if((${tSRC} MATCHES "tDiffImg"))
-target_link_libraries( ${tSRC} DSTmath CCFitsExtractor DSTCore DSTtools DSTmath DSLprocessing ${CFITSIO_LIBRARIES} ${AST_LIBRARIES} ${Qt5_LIBRARIES}  ${ROOT_LIBRARIES})
-else()
-target_link_libraries( ${tSRC} CCFitsExtractor DSTCore DSTtools DSTmath ${CFITSIO_LIBRARIES} ${AST_LIBRARIES} ${Qt5_LIBRARIES}  ${ROOT_LIBRARIES})
-endif()
+    target_link_libraries( ${tSRC} DSTCore)
 
 endforeach( test_source_file ${TEST_SRC} )
-
-#-------------------- ADD LIB CUSTOM TARGET
-
-ADD_CUSTOM_TARGET (lib)
-
-ADD_CUSTOM_COMMAND(
-	TARGET lib
-	COMMAND make ARGS CCFitsExtractor
-)
 
 #-------------------- CONFIGURATION OF DOXYGEN DOC GENERATION
 
@@ -208,13 +187,12 @@ CMakeCache.txt
 cmake.check_cache
 cmake_install.cmake
 CMakeTmp
-${QtDisplay_HEADERS_MOC}
-${QtDisplay_FORMS_HEADERS}
 ${version_file}
-src/fitsExtractor/*_parameters
-src/fitsExtractor/moc*.cxx
 Makefile
 CMakeFiles
+./build/lib
+./build/exe
+./build/test
 )
 
 ADD_CUSTOM_COMMAND(
