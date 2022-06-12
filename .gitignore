@@ -24,7 +24,7 @@ DarkSim
 .svn
 test_*.txt
 *.fits
-DST_version.cxx
+*_version.cxx
 *screenlog*
 gdb
 
