@@ -24,7 +24,7 @@ DarkSim
 .svn
 test_*.txt
 *.fits
-*_version.cxx
+DSS_version.cxx
 *screenlog*
 gdb
 
@@ -75,10 +75,11 @@ CMakeFiles
 depcomp
 missing
 install-sh
-cmake_install.cmake
 *Makefile*
 .deps
 *install_manifest.txt
+gTest_version.h
+*.cmake
 
 #--------------- DOXYFILE
 doc/html

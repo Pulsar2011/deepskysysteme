@@ -107,7 +107,7 @@ string(REGEX REPLACE "^v([0-9]+)\\..*" "\\1" VERSION_MAJOR "${VERSION}")
 string(REGEX REPLACE "^v[0-9]+\\.([0-9]+).*" "\\1" VERSION_MINOR "${VERSION}")
 string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" VERSION_PATCH "${VERSION}")
 string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.[0-9]+.(-*)" "\\1" VERSION_SHA1 "${VERSION}")
-set(VERSION_SHORT "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+set(VERSION_SHORT "v${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 message("-- PKG VERSION : "${VERSION})
 message("-- PKG VERSION : "${VERSION_SHORT})
 message("-- PKG MAJOR   : "${VERSION_MAJOR})
@@ -118,10 +118,11 @@ message("-- PKG SHA1    : "${VERSION_SHA1})
 configure_file(${CMAKE_MODULE_PATH}/DSS_version.cxx.in ${CMAKE_CURRENT_BINARY_DIR}/src/DSS_version.cxx)
 set(version_file "${CMAKE_CURRENT_BINARY_DIR}/src/DSS_version.cxx")
 
+configure_file(${CMAKE_MODULE_PATH}/gTest_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/test/gTest_version.h)
 #-------------------- Inclusion des en-têtes publics
 
-INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/. ./include/DSTCore)
-link_directories(${LIBRARY_OUTPUT_PATH})
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/. ${PROJECT_BINARY_DIR}/include ${PROJECT_BINARY_DIR}/include/DSTCore ${PROJECT_BINARY_DIR}/gTest)
+link_directories(${LIBRARY_OUTPUT_PATH} ${CMAKE_SOURCE_DIR}/gtest/lib)
 
 message("-- PROJECT BINARY DIR: "${PROJECT_BINARY_DIR})
 message("-- CURRENT BINARY DIR: "${CMAKE_CURRENT_BINARY_DIR})
@@ -130,6 +131,7 @@ message("-- CMAKE SOURCE DIR  : "${CMAKE_SOURCE_DIR})
 #-------------------- Find GSL dependencies
 set(CMAKE_INCLUDE_PATH "${GSL_INCLUDE_DIRS}" ${CMAKE_INCLUDE_PATH})
 set(CMAKE_LIBRARY_PATH "${GSL_LIBRARY_DIRS}" ${CMAKE_LIBRARY_PATH})
+set(CMAKE_LIBRARY_PATH "${PROJECT_BINARY_DIR}/gtest/lib" ${CMAKE_LIBRARY_PATH})
 
 #-------------------- LIST SOURCE FILE
 
@@ -145,13 +147,15 @@ add_library(
     DSTCore
     SHARED
 #    STATIC
-
     ${CORE_SRC}
     ${CORE_HEADER}
     ${version_file}
 )
 
 #-------------------- Configuration des test
+enable_testing()
+include(GoogleTest)
+
 foreach( test_source_file ${TEST_SRC} )
 	get_filename_component( tSRC ${test_source_file} NAME_WE)
 	add_executable(
@@ -159,7 +163,9 @@ foreach( test_source_file ${TEST_SRC} )
 		${test_source_file}
 	)
 
-    target_link_libraries( ${tSRC} DSTCore)
+    target_link_libraries( ${tSRC} DSTCore gtest gtest_main)
+
+    gtest_discover_tests(${tSRC})
 
 endforeach( test_source_file ${TEST_SRC} )
 
