@@ -17,11 +17,13 @@
 #include<algorithm>
 #include<cstdio>
 
-#ifdef _HAS_ROOT_
-#include<TDirectory.h>
-#include<TList.h>
+#if __cplusplus >= 201703L
+#include<filesystem>
+namespace fs = std::filesystem;
+#else
+#include <boost/filesystem.hpp>
+namespace fs boost::filesystem;
 #endif
-
 
 namespace DSS
 {
@@ -33,6 +35,13 @@ namespace DSS
      */
     class DOption
     {
+
+#ifdef _gTEST_version_
+        friend class gTEST_manager;
+        FRIEND_TEST(gTEST_manager, constructor);
+        FRIEND_TEST(gTEST_manager, cleaner);
+        FRIEND_TEST(gTEST_manager, add_option);
+#endif  
         /**
          * @class DSS::DOption OptionManager.h "DSTCore/OptionManager.h"
          * @author GILLARD William
@@ -145,6 +154,8 @@ namespace DSS
         
         static std::string prg_name;        
     };
+
+    bool mkdir(const std::string&);
 }
 
 #endif /* defined(__Calibration__OptionManager__) */

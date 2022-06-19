@@ -420,4 +420,23 @@ namespace DSS
         
         return true;
     }    
+
+    /**
+     *  @brief Create directory.
+     *  @details Check directory dir exists. If it does not exists, it create the directory.
+     *  @param dir: directory to create.
+     *  @return true if their isn't any error while creating directory.
+     */
+    bool mkdir(const std::string& dir)
+    {
+#if __cplusplus >= 201703L
+        if(fs::exists(dir)) return true;
+        return fs::create_directories(dir);
+#else
+        fs::path path(dir);
+        if(fs::exists(path)) return true;
+        
+        return fs::create_directory(path);
+#endif
+    }
 }

@@ -6,5 +6,6 @@
 std::string this_VERSION=std::string("@VERSION@");
 std::string this_VERSION_SHORT=std::string("@VERSION_SHORT@");
 std::string this_VERSION_SHA1=std::string("@VERSION_SHA1@");
+std::string PROJECT_DIR=std::string("@CMAKE_SOURCE_DIR@");
 
 #endif
