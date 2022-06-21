@@ -1,0 +1,38 @@
+stages:
+  - build
+  - test
+  - deploy
+
+# build and test the code 
+build:
+  stage: build
+  script:
+    - mkdir build
+    - cd build
+    - cmake ..
+    - make -j $(nproc --all)
+  artifacts:
+    expire_in: 2 hrs
+    paths:
+      - build
+
+test:
+  stage: test
+  script:
+    - cd build
+    - make test
+    - exe/gTest_version
+    - exe/gTest_Manager
+
+# build and deploy doc
+pages:
+  stage: deploy
+  script:
+    - cd build
+    - cmake .. 
+    - make doc
+    - cd ..
+    - mv build/doc/html public
+  artifacts:
+    paths:
+      - public
