@@ -1,38 +1,42 @@
+# You can override the included template(s) by including variable overrides
+# SAST customization: https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
+# Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/#customizing-settings
+# Note that environment variables can be set in several places
+# See https://docs.gitlab.com/ee/ci/variables/#priority-of-environment-variables
 stages:
-  - build
-  - test
-  - deploy
-
-# build and test the code 
+- build
+- test
+- deploy
 build:
   stage: build
   script:
-    - mkdir build
-    - cd build
-    - cmake ..
-    - make -j $(nproc --all)
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make -j $(nproc --all)
   artifacts:
     expire_in: 2 hrs
     paths:
-      - build
-
+    - build
 test:
   stage: test
   script:
-    - cd build
-    - make test
-    - exe/gTest_version
-    - exe/gTest_Manager
-
-# build and deploy doc
+  - cd build
+  - make test
+  - exe/gTest_version
+  - exe/gTest_Manager
 pages:
   stage: deploy
   script:
-    - cd build
-    - cmake .. 
-    - make doc
-    - cd ..
-    - mv build/doc/html public
+  - cd build
+  - cmake ..
+  - make doc
+  - cd ..
+  - mv build/doc/html public
   artifacts:
     paths:
-      - public
+    - public
+sast:
+  stage: test
+include:
+- template: Security/SAST.gitlab-ci.yml
