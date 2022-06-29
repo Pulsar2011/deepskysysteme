@@ -3,6 +3,8 @@
 # Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/#customizing-settings
 # Note that environment variables can be set in several places
 # See https://docs.gitlab.com/ee/ci/variables/#priority-of-environment-variables
+image:
+  name: gitlab-registry.in2p3.fr/in2p3_euclid/gacen/dbbuilder_test:v1
 stages:
 - build
 - test
