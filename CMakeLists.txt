@@ -204,6 +204,7 @@ CMakeFiles
 ./build/lib
 ./build/exe
 ./build/test
+./doc
 )
 
 ADD_CUSTOM_COMMAND(

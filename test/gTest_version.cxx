@@ -19,7 +19,7 @@ namespace DSS
         std::vector<int16_t> ver = gGIT::this_ver->getVersion();
 
         ASSERT_EQ(ver.size(), 3);
-        ASSERT_EQ(gGIT::isEqual(std::string("v")+std::to_string(ver[0])+std::string(".")+std::to_string(ver[1]) +std::string(".")+std::to_string(ver[2])+std::string("-")+this_VERSION_SHA1), true);
+        ASSERT_EQ(gGIT::isEqual(std::string("v")+std::to_string(ver[0])+std::string(".")+std::to_string(ver[1]) +std::string(".")+std::to_string(ver[2])+std::string("-")+this_VERSION_SHA1), true)<<std::string("v")+std::to_string(ver[0])+std::string(".")+std::to_string(ver[1]) +std::string(".")+std::to_string(ver[2])+std::string("-")+this_VERSION_SHA1<<"%"<<DSS::gGIT::this_ver->version;
     }
 
     TEST(version_Tester, test_readVersion)

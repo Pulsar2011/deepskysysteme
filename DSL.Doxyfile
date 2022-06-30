@@ -32,7 +32,7 @@ DOXYFILE_ENCODING      = UTF-8
 # title of most generated pages and in a few other places.
 # The default value is: My Project.
 
-PROJECT_NAME           = "Deep Sky Library"
+PROJECT_NAME           = "Deep Sky System Library"
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. This
 # could be handy for archiving the generated documentation or if some version
@@ -44,7 +44,7 @@ PROJECT_NUMBER         =
 # for a project that appears at the top of each page and should give viewer a
 # quick idea about the purpose of the project. Keep the description short.
 
-PROJECT_BRIEF          = "Tools FITS image data analyses."
+PROJECT_BRIEF          = "System manager for Deep Sky project."
 
 # With the PROJECT_LOGO tag one can specify an logo or icon that is included in
 # the documentation. The maximum height of the logo should not exceed 55 pixels
@@ -839,9 +839,9 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = ./DarkSim/programs \
-                         ./Utilities/programs \
-                         ./PixSim/programs
+EXCLUDE                = ./gtest \
+                         ./test \
+                         ./module
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -1078,7 +1078,7 @@ COLS_IN_ALPHA_INDEX    = 5
 # while generating the index headers.
 # This tag requires that the tag ALPHABETICAL_INDEX is set to YES.
 
-IGNORE_PREFIX          = 
+IGNORE_PREFIX          = gtest
 
 #---------------------------------------------------------------------------
 # Configuration options related to the HTML output
@@ -2016,7 +2016,7 @@ SEARCH_INCLUDES        = YES
 # preprocessor.
 # This tag requires that the tag SEARCH_INCLUDES is set to YES.
 
-INCLUDE_PATH           = 
+INCLUDE_PATH           = include
 
 # You can use the INCLUDE_FILE_PATTERNS tag to specify one or more wildcard
 # patterns (like *.h and *.hpp) to filter out the header-files in the
