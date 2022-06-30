@@ -125,7 +125,7 @@ set(version_file "${CMAKE_CURRENT_BINARY_DIR}/src/DSS_version.cxx")
 configure_file(${CMAKE_MODULE_PATH}/gTest_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/test/gTest_version.h)
 #-------------------- Inclusion des en-têtes publics
 
-INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/. ${PROJECT_BINARY_DIR}/include ${PROJECT_BINARY_DIR}/include/DSTCore ${PROJECT_BINARY_DIR}/gTest)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/. ${PROJECT_BINARY_DIR}/include ${PROJECT_BINARY_DIR}/include/DSTCore ${PROJECT_BINARY_DIR}/gest)
 link_directories(${LIBRARY_OUTPUT_PATH} ${CMAKE_SOURCE_DIR}/gtest/lib)
 
 message("-- PROJECT DIR: "${CMAKE_SOURCE_DIR})
@@ -161,8 +161,8 @@ add_library(
 )
 
 #-------------------- Configuration des test
+#add_subdirectory("${PROJECT_SOURCE_DIR}/extern/googletest" "extern/googletest")
 enable_testing()
-include(GoogleTest)
 
 foreach( test_source_file ${TEST_SRC} )
 	get_filename_component( tSRC ${test_source_file} NAME_WE)
@@ -173,8 +173,13 @@ foreach( test_source_file ${TEST_SRC} )
 
     target_link_libraries( ${tSRC} DSTCore gtest gtest_main)
 
-    gtest_discover_tests(${tSRC})
+endforeach( test_source_file ${TEST_SRC} )
 
+include(GoogleTest)
+
+foreach( test_source_file ${TEST_SRC} )
+    get_filename_component( tSRC ${test_source_file} NAME_WE)
+    gtest_discover_tests(${tSRC})
 endforeach( test_source_file ${TEST_SRC} )
 
 #-------------------- CONFIGURATION OF DOXYGEN DOC GENERATION
