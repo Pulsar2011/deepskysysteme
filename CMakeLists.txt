@@ -53,9 +53,11 @@ CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 if(COMPILER_SUPPORTS_CXX17)
     message("-- USE CXX11 STANDARD")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+    set(CMAKE_CXX_STANDARD "17")
 elseif(COMPILER_SUPPORTS_CXX11)
     message("-- USE CXX11 STANDARD")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    set(CMAKE_CXX_STANDARD "11")
 elseif(COMPILER_SUPPORTS_CXX0X)
     message("-- USE CX0X STANDARD")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
@@ -125,8 +127,7 @@ set(version_file "${CMAKE_CURRENT_BINARY_DIR}/src/DSS_version.cxx")
 configure_file(${CMAKE_MODULE_PATH}/gTest_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/test/gTest_version.h)
 #-------------------- Inclusion des en-têtes publics
 
-INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/. ${PROJECT_BINARY_DIR}/include ${PROJECT_BINARY_DIR}/include/DSTCore ${PROJECT_BINARY_DIR}/gest)
-link_directories(${LIBRARY_OUTPUT_PATH} ${CMAKE_SOURCE_DIR}/gtest/lib)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/. ${PROJECT_BINARY_DIR}/include ${PROJECT_BINARY_DIR}/include/DSTCore)
 
 message("-- PROJECT DIR: "${CMAKE_SOURCE_DIR})
 message("-- PROJECT BINARY DIR: "${PROJECT_BINARY_DIR})
@@ -140,6 +141,16 @@ set(CMAKE_LIBRARY_PATH "${PROJECT_BINARY_DIR}/gtest/lib" ${CMAKE_LIBRARY_PATH})
 
 message("-- CMAKE INCLUDE DIR  : "${CMAKE_INCLUDE_PATH})
 message("-- CMAKE LIBRARY DIR  : "${CMAKE_LIBRARY_PATH})
+
+#-------------------- Find Boost dependencies
+message("${Red}----------- SEARCH BOOST Framework -----------${ColourReset}")
+find_package(Boost REQUIRED COMPONENTS filesystem chrono)
+if(${Boost_FOUND})
+    message("${Blue}-- Boost INC DIR ${ColourReset} ${Boost_INCLUDE_DIRS}")
+    message("${Blue}-- Boost LIBRARY DIR ${ColourReset} ${Boost_LIBRARY_DIRS}")
+    message("${Blue}-- Boost LIB ${ColourReset} ${Boost_LIBRARIES}")
+endif(${Boost_FOUND})
+set(Boost_USE_MULTITHREADED ON)
 
 #-------------------- LIST SOURCE FILE
 
@@ -161,7 +172,8 @@ add_library(
 )
 
 #-------------------- Configuration des test
-#add_subdirectory("${PROJECT_SOURCE_DIR}/extern/googletest" "extern/googletest")
+add_subdirectory(googletest)
+include_directories(${PARENT_PATH_OF_GTEST}/googltest/googltest/include)
 enable_testing()
 
 foreach( test_source_file ${TEST_SRC} )
@@ -171,7 +183,12 @@ foreach( test_source_file ${TEST_SRC} )
 		${test_source_file}
 	)
 
-    target_link_libraries( ${tSRC} DSTCore gtest gtest_main)
+    if(COMPILER_SUPPORTS_CXX17)
+        target_link_libraries( ${tSRC} DSTCore gtest gtest_main)
+    else(COMPILER_SUPPORTS_CXX17)
+        target_link_libraries( ${tSRC} DSTCore ${Boost_LIBRARIES} gtest gtest_main)
+    endif(COMPILER_SUPPORTS_CXX17)
+
 
 endforeach( test_source_file ${TEST_SRC} )
 
@@ -204,15 +221,20 @@ cmake.depends
 cmake.check_depends
 CMakeCache.txt
 cmake.check_cache
-cmake_install.cmake
 CMakeTmp
 ${version_file}
 Makefile
 CMakeFiles
+*.cmake
 ./build/lib
 ./build/exe
 ./build/test
 ./doc
+./googletest/CMakeFiles
+./googletest/Makefile
+./googletest/*.cmake
+./lib
+./bin
 )
 
 ADD_CUSTOM_COMMAND(
