@@ -9,6 +9,8 @@ stages:
 - build
 - test
 - deploy
+variables:
+  GIT_SUBMODULE_STRATEGY: normal
 build:
   stage: build
   script:
