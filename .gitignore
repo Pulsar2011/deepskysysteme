@@ -63,6 +63,10 @@ CCFitsExtractorFramework
 *.blg
 *.out
 
+#--------------- Google test Git repo
+googletest/.git*
+
+
 #--------------- ARCHIVE
 *.gz
 *.zip
