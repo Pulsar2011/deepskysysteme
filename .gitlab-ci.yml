@@ -6,12 +6,14 @@
 image:
   name: gitlab-registry.in2p3.fr/in2p3_euclid/gacen/dbbuilder_test:v1
 stages:
+- install
 - build
 - test
 - deploy
 variables:
   GIT_SUBMODULE_STRATEGY: normal
 install:
+  stage: install
   - yum update cmake
 build:
   stage: build
