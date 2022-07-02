@@ -11,6 +11,8 @@ stages:
 - deploy
 variables:
   GIT_SUBMODULE_STRATEGY: normal
+install:
+  - yum update cmake
 build:
   stage: build
   script:
