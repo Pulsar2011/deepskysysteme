@@ -5,16 +5,20 @@
 # See https://docs.gitlab.com/ee/ci/variables/#priority-of-environment-variables
 image:
   name: gitlab-registry.in2p3.fr/in2p3_euclid/gacen/dbbuilder_test:v1
+  
 stages:
-- install
+- .pre
 - build
 - test
 - deploy
+
 variables:
   GIT_SUBMODULE_STRATEGY: normal
-install:
-  stage: install
+
+deps:
+  stage: .pre
   - yum update cmake
+
 build:
   stage: build
   script:
@@ -26,13 +30,13 @@ build:
     expire_in: 2 hrs
     paths:
     - build
+
 test:
   stage: test
   script:
   - cd build
   - make test
-  - exe/gTest_version
-  - exe/gTest_Manager
+
 pages:
   stage: deploy
   script:
