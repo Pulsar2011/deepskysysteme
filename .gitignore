@@ -88,6 +88,7 @@ install-sh
 *install_manifest.txt
 gTest_version.h
 *.cmake
+CMakeCache.txt
 
 #--------------- DOXYFILE
 doc/html
