@@ -41,6 +41,8 @@ namespace DSS
         FRIEND_TEST(gTEST_manager, constructor);
         FRIEND_TEST(gTEST_manager, cleaner);
         FRIEND_TEST(gTEST_manager, add_option);
+        FRIEND_TEST(gTEST_manager, add_param);
+        FRIEND_TEST(gTEST_manager, add_dscrp);
 #endif  
         /**
          * @class DSS::DOption OptionManager.h "DSTCore/OptionManager.h"
@@ -52,7 +54,6 @@ namespace DSS
         
     private:
         std::vector<std::string> filelist;  ///< List of input files
-        std::string usr_option;             ///< Optional parameters string specific to a command shell
         std::string logfile;                ///< Path and name of the logfile to be used when redirecting standard output to a logfile
         
         int16_t OUTfd, ERRfd;
@@ -88,13 +89,13 @@ namespace DSS
          *  @param index : position of the current input parameter in the parameters list
          *  @param argv  : input parameter's list
          *  @param argc  : max number of parameters
-         *  @return The methods should return true if the parameters is required in the analyses. Any parameters returning false will be included in the usr_option string that can be passed to analyses if required.
+         *  @return The methods should return true if the parameters is defined. Unknow parameters should return false.
          */
-        virtual bool UserParameters(int &index, char** argv, int argc) = 0;
+        virtual bool UserParameters(std::vector<std::string>::const_iterator& it, const std::vector<std::string>& arg) = 0;
         
     public:
         
-        DOption():filelist(),usr_option(),logfile(),prg_description(),prg_option(),prg_param(),output_file(),level(0)
+        DOption():filelist(),logfile(),prg_description(),prg_option(),prg_param(),output_file(),level(0)
         {
 
 #if defined __linux__ && __cplusplus >= 201103L
@@ -119,13 +120,6 @@ namespace DSS
         virtual ~DOption();
         
         bool InitParameters(int argc, char** argv);
-        
-        /**
-         *  @brief Retrive the optional parameters specific to an analyses
-         *  @details The methods list all optional parameters it did not know and that may be specific to a given analyses. This allows to retrive the optional parameters specific to the current analyses.
-         *  @return list of unknows options.
-         */
-        inline const std::string GetOption() const {return usr_option;}
         
         /**
          *  @brief List files to be analysed

@@ -298,86 +298,102 @@ namespace DSS
     bool DOption::InitParameters(int argc, char **argv)
     {
         bool read_status = true;
-        std::string arg;
+        std::vector<std::string> arg;
         int n = 0;
         
         for(n = 0; n < argc ; n++)
         {
-            arg = std::string(argv[n]);
+//#ifdef __DEBUG__
+//            std::cout<<"ARG["<<n<<"] : "<<argv[n]<<std::endl;
+//#endif
+            arg.push_back(std::string(argv[n]));
             
-            if(arg[0] == '-' || arg[0] == '+')
+            if(arg[arg.size()-1][0] == '-' || arg[arg.size()-1][0] == '+')
             {
-                std::transform(arg.begin(), arg.end(), arg.begin(), ::tolower);
+                std::transform(arg[arg.size()-1].begin(), arg[arg.size()-1].end(), arg[arg.size()-1].begin(), ::tolower);
             }
             
-            if(!arg.compare("-h") || !arg.compare("--help"))
+            if(!arg[arg.size()-1].compare("-h") || !arg[arg.size()-1].compare("--help"))
             {
                 Usage();
                 return false;
             }
         }
         
-        n=0;
-        while(n < argc-1)
+        std::vector<std::string>::const_iterator it=arg.cbegin();
+        while(it != arg.cend())
         {
-            n++;
-            
-            arg = std::string(argv[n]);
-            
+//#ifdef __DEBUG__
+//            std::cout<<"OPT : "<<(*it)<<std::endl;
+//#endif
             //-- CONVERT TO LOWER CASE IF NEEDED
-            if(arg[0] == '-' || arg[0] == '+')
+            if((*it)[0] != '-' && (*it)[0] != '+')
             {
-                std::transform(arg.begin(), arg.end(), arg.begin(), ::tolower);
-            }
-            else
-            {
-                filelist.push_back(std::string(argv[n]));
+                filelist.push_back(std::string(*it));
                 std::cout<<"   \033[34m• Add input file \033[0m"<<(--filelist.end())->c_str()<<std::endl;
+                it++;
                 continue;
             }
             
-            if(!arg.compare("-o") || !arg.compare("--output"))
+            if(!it->compare("-o") || !it->compare("--output"))
             {
-                if (++n >= argc) {n--; continue;}
-                output_file += std::string(argv[n]);
+                if(std::next(it) != arg.cend()){it++;}else{it++; continue;}
+//#ifdef __DEBUG__
+//                std::cout<<"OPT : "<<(*it)<<std::endl;
+//#endif                
+                output_file += std::string(*it);
                 std::cout<<"   \033[34m• Set output to \033[0m"<<output_file.c_str()<<std::endl;
             }
-            else if(!arg.compare("--log"))
+            else if(!it->compare("--log"))
             {
-                if (++n >= argc) {n--; continue;}
-                logfile += std::string(argv[n]);
+                if(std::next(it) != arg.cend()){it++;}else{it++; continue;}
+                logfile += std::string(*it);
                 std::cout<<"   \033[34m• Redirect output to file \033[0m"<<logfile.c_str()<<std::endl;
             }
-            else if(!arg.compare("--debug") || !arg.compare("-d"))
+            else if(!it->compare("--debug") ||
+                    !it->compare("-d"))
             {
-                if (++n >= argc) {n--; continue;}
-                if (std::string(argv[n]).find('-') != std::string::npos)
+                if(std::next(it) != arg.cend()){it++;}else{it++; continue;}
+                if (std::string(*it).find('-') != std::string::npos)
                 {
-                    n--;
+                    it--;
                     level += 1;
                 }
-                else if(std::string(argv[n]).find_first_not_of("0123456789") != std::string::npos)
+                else if(std::string(*it).find_first_not_of("0123456789") != std::string::npos)
                 {
-                    n--;
-                    continue;
+                    it--;
+                    level += 1;
                 }
                 else
                 {
-                    level += static_cast<int16_t>(atoi(argv[n]));
+                    level += static_cast<int16_t>(stoi(*it));
                 }
-                std::cout<<"   \033[34m• Avtivate debug mode @ level\033[0m"<<level<<std::endl;
+                std::cout<<"   \033[34m• Avtivate debug mode @ level \033[0m"<<level<<std::endl;
             }
             else
             {
-                if(UserParameters(n, argv, argc))
-                    continue;
-                
-                usr_option += std::string(argv[n]);
+                if(!UserParameters(it,arg))
+                {
+                    std::string err_str = std::string("\033[43;36m[");
+                    err_str+=prg_name;
+                    err_str += std::string("]\033[1;0m Unknown parameter ");
+                    err_str += *it;
+                    err_str +=std::string("\033[0m");  
+                    throw std::runtime_error(err_str);
+                }
             }
+            
+            it++;
         }
         
         if(filelist.size() < 1)
-            read_status = false;
+        {
+            std::string err_str = std::string("\033[43;36m[");
+            err_str+=prg_name;
+            err_str += std::string("]\033[1;0m required parameters are missing.");
+            err_str +=std::string("\033[0m");  
+            throw std::runtime_error(err_str);
+        }
         
         if(logfile.size() > 4)
         {

@@ -66,6 +66,8 @@ CCFitsExtractorFramework
 #--------------- Google test Git repo
 googletest/.git*
 Testing
+googletest/googletest/generated
+*.pc
 
 
 #--------------- ARCHIVE
