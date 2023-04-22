@@ -89,6 +89,7 @@ install-sh
 gTest_version.h
 *.cmake
 CMakeCache.txt
+DSS_version.cxx
 
 #--------------- DOXYFILE
 doc/html
