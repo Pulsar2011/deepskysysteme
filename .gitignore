@@ -93,3 +93,6 @@ DSS_version.cxx
 
 #--------------- DOXYFILE
 doc/html
+
+#--------------- GOOGLE TEST 
+googletest/generated
