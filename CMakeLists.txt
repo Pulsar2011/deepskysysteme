@@ -1,14 +1,20 @@
 #-------------------- Configuration du projet
+#-------------------- CMAKE Configuration
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+
 project(DeepSkyProject CXX)
+message("${Green}-- Project source directory :" ${CMAKE_SOURCE_DIR} "${ColourReset}")
+
+set(CMAKE_BUILD_DIRECTORY ./build)
 
 if(DEFINED ENV{DeepSkyROOT})
     set(DeepSkyROOT $ENV{DeepSkyROOT})
 endif()
 
-if(DEFINED ENV{Qt5})
-    set(Qt5_ROOT $ENV{Qt5})
+#if(DEFINED ENV{Qt5})
+#    set(Qt5_ROOT $ENV{Qt5})
 #    message("-- Expected CMAKE Qt5 module path "${Qt5_ROOT})
-endif()
+#endif()
 
 if(NOT WIN32)
     string(ASCII 27 Esc)
@@ -31,18 +37,15 @@ if(NOT WIN32)
 endif()
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX "${DeepSkyROOT}" CACHE PATH "default install path" FORCE)
+    set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/../. CACHE PATH "default install path" FORCE)
 endif()
 
 set(EXECUTABLE_OUTPUT_PATH ./build/exe/)
 set(LIBRARY_OUTPUT_PATH ./build/lib/)
 
-#-------------------- CMAKE Configuration
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/modules")
 
-message("${BoldYellow}-- CMAKE INSTALL PREFIX : ${ColourReset}"${CMAKE_INSTALL_PREFIX})
+message("${BoldYellow}-- CMAKE INSTALL PREFIX : ${ColourReset}" ${CMAKE_INSTALL_PREFIX})
 
 #-------------------- COMPILER
 include(CheckCXXCompilerFlag)
@@ -51,7 +54,7 @@ CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 
 if(COMPILER_SUPPORTS_CXX17)
-    message("-- USE CXX11 STANDARD")
+    message("-- USE CXX17 STANDARD")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
     set(CMAKE_CXX_STANDARD "17")
 elseif(COMPILER_SUPPORTS_CXX11)
@@ -114,12 +117,17 @@ string(REGEX REPLACE "^v[0-9]+\\.([0-9]+).*" "\\1" VERSION_MINOR "${VERSION}")
 string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" VERSION_PATCH "${VERSION}")
 string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.[0-9]+.(-*)" "\\1" VERSION_SHA1 "${VERSION}")
 set(VERSION_SHORT "v${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
-message("-- PKG VERSION : "${VERSION})
-message("-- PKG VERSION : "${VERSION_SHORT})
-message("-- PKG MAJOR   : "${VERSION_MAJOR})
-message("-- PKG MINOR   : "${VERSION_MINOR})
-message("-- PKG PATCH   : "${VERSION_PATCH})
-message("-- PKG SHA1    : "${VERSION_SHA1})
+message("-- PKG VERSION : " ${VERSION})
+message("-- PKG VERSION : " ${VERSION_SHORT})
+message("-- PKG MAJOR   : " ${VERSION_MAJOR})
+message("-- PKG MINOR   : " ${VERSION_MINOR})
+message("-- PKG PATCH   : " ${VERSION_PATCH})
+message("-- PKG SHA1    : " ${VERSION_SHA1})
+
+set(CMAKE_PROJECT_VERSION "${VERSION}")
+set(CMAKE_PROJECT_VERSION_MAJOR "${VERSION_MAJOR}")
+set(CMAKE_PROJECT_VERSION_MINOR "${VERSION_MINOR}")
+set(CMAKE_PROJECT_VERSION_PATCH "${VERSION_PATCH}")
 
 configure_file(${CMAKE_MODULE_PATH}/DSS_version.cxx.in ${CMAKE_CURRENT_BINARY_DIR}/src/DSS_version.cxx)
 set(version_file "${CMAKE_CURRENT_BINARY_DIR}/src/DSS_version.cxx")
@@ -127,35 +135,39 @@ set(version_file "${CMAKE_CURRENT_BINARY_DIR}/src/DSS_version.cxx")
 configure_file(${CMAKE_MODULE_PATH}/gTest_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/test/gTest_version.h)
 #-------------------- Inclusion des en-têtes publics
 
-INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/. ${PROJECT_BINARY_DIR}/include ${PROJECT_BINARY_DIR}/include/DSTCore)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/test ./include ./include/DSTCore)
 
-message("-- PROJECT DIR: "${CMAKE_SOURCE_DIR})
-message("-- PROJECT BINARY DIR: "${PROJECT_BINARY_DIR})
-message("-- CURRENT BINARY DIR: "${CMAKE_CURRENT_BINARY_DIR})
-message("-- CMAKE SOURCE DIR  : "${CMAKE_SOURCE_DIR})
+message("-- PROJECT DIR: " ${CMAKE_SOURCE_DIR})
+message("-- PROJECT BINARY DIR: " ${PROJECT_BINARY_DIR})
+message("-- CURRENT BINARY DIR: " ${CMAKE_CURRENT_BINARY_DIR})
+message("-- CMAKE SOURCE DIR  : " ${CMAKE_SOURCE_DIR})
 
 #-------------------- Find GSL dependencies
 set(CMAKE_INCLUDE_PATH "${GSL_INCLUDE_DIRS}" ${CMAKE_INCLUDE_PATH})
 set(CMAKE_LIBRARY_PATH "${GSL_LIBRARY_DIRS}" ${CMAKE_LIBRARY_PATH})
 set(CMAKE_LIBRARY_PATH "${PROJECT_BINARY_DIR}/gtest/lib" ${CMAKE_LIBRARY_PATH})
 
-message("-- CMAKE INCLUDE DIR  : "${CMAKE_INCLUDE_PATH})
-message("-- CMAKE LIBRARY DIR  : "${CMAKE_LIBRARY_PATH})
+message("-- CMAKE INCLUDE DIR  : " ${CMAKE_INCLUDE_PATH})
+message("-- CMAKE LIBRARY DIR  : " ${CMAKE_LIBRARY_PATH})
 
 #-------------------- Find Boost dependencies
-message("${Red}----------- SEARCH BOOST Framework -----------${ColourReset}")
-find_package(Boost REQUIRED COMPONENTS filesystem chrono)
-if(${Boost_FOUND})
-    message("${Blue}-- Boost INC DIR ${ColourReset} ${Boost_INCLUDE_DIRS}")
-    message("${Blue}-- Boost LIBRARY DIR ${ColourReset} ${Boost_LIBRARY_DIRS}")
-    message("${Blue}-- Boost LIB ${ColourReset} ${Boost_LIBRARIES}")
-endif(${Boost_FOUND})
-set(Boost_USE_MULTITHREADED ON)
+if(!${COMPILER_SUPPORTS_CXX17})
+    message("${Red}----------- SEARCH BOOST Framework -----------${ColourReset}")
+    find_package(Boost REQUIRED COMPONENTS filesystem chrono)
+    if(${Boost_FOUND})
+        message("${Blue}-- Boost INC DIR ${ColourReset} ${Boost_INCLUDE_DIRS}")
+        message("${Blue}-- Boost LIBRARY DIR ${ColourReset} ${Boost_LIBRARY_DIRS}")
+        message("${Blue}-- Boost LIB ${ColourReset} ${Boost_LIBRARIES}")
+    endif(${Boost_FOUND})
+    set(Boost_USE_MULTITHREADED ON)
+endif(!${COMPILER_SUPPORTS_CXX17})
 
 #-------------------- LIST SOURCE FILE
 
 file(GLOB CORE_SRC "src/*.cxx")
+file(GLOB GEN_SRC "${CMAKE_CURRENT_BINARY_DIR}/src/*.cxx")
 file(GLOB CORE_HEADER "include/DSTCore/*.h")
+file(GLOB GEN_HEADER "${CMAKE_CURRENT_BINARY_DIR}/test/*.h")
 file(GLOB TEST_SRC "test/*.cxx")
 
 set(HEADER_FILES ${CORE_HEADER})
@@ -165,7 +177,6 @@ set(HEADER_FILES ${CORE_HEADER})
 add_library(
     DSTCore
     SHARED
-#    STATIC
     ${CORE_SRC}
     ${CORE_HEADER}
     ${version_file}
