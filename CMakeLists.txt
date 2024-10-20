@@ -11,11 +11,6 @@ if(DEFINED ENV{DeepSkyROOT})
     set(DeepSkyROOT $ENV{DeepSkyROOT})
 endif()
 
-#if(DEFINED ENV{Qt5})
-#    set(Qt5_ROOT $ENV{Qt5})
-#    message("-- Expected CMAKE Qt5 module path "${Qt5_ROOT})
-#endif()
-
 if(NOT WIN32)
     string(ASCII 27 Esc)
     set(ColourReset "${Esc}[m")
@@ -133,8 +128,8 @@ configure_file(${CMAKE_MODULE_PATH}/DSS_version.cxx.in ${CMAKE_CURRENT_BINARY_DI
 set(version_file "${CMAKE_CURRENT_BINARY_DIR}/src/DSS_version.cxx")
 
 configure_file(${CMAKE_MODULE_PATH}/gTest_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/test/gTest_version.h)
-#-------------------- Inclusion des en-têtes publics
 
+#-------------------- Inclusion des en-têtes publics
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/test ./include ./include/DSTCore)
 
 message("-- PROJECT DIR: " ${CMAKE_SOURCE_DIR})
@@ -142,13 +137,6 @@ message("-- PROJECT BINARY DIR: " ${PROJECT_BINARY_DIR})
 message("-- CURRENT BINARY DIR: " ${CMAKE_CURRENT_BINARY_DIR})
 message("-- CMAKE SOURCE DIR  : " ${CMAKE_SOURCE_DIR})
 
-#-------------------- Find GSL dependencies
-set(CMAKE_INCLUDE_PATH "${GSL_INCLUDE_DIRS}" ${CMAKE_INCLUDE_PATH})
-set(CMAKE_LIBRARY_PATH "${GSL_LIBRARY_DIRS}" ${CMAKE_LIBRARY_PATH})
-set(CMAKE_LIBRARY_PATH "${PROJECT_BINARY_DIR}/gtest/lib" ${CMAKE_LIBRARY_PATH})
-
-message("-- CMAKE INCLUDE DIR  : " ${CMAKE_INCLUDE_PATH})
-message("-- CMAKE LIBRARY DIR  : " ${CMAKE_LIBRARY_PATH})
 
 #-------------------- Find Boost dependencies
 if(!${COMPILER_SUPPORTS_CXX17})
