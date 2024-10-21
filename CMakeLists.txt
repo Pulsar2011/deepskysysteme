@@ -171,7 +171,7 @@ add_library(
 )
 
 #-------------------- Configuration des test
-add_subdirectory(googletest)
+add_subdirectory(googletest   EXCLUDE_FROM_ALL)
 include_directories(${PARENT_PATH_OF_GTEST}/googltest/googltest/include)
 enable_testing()
 
@@ -240,8 +240,8 @@ ADD_CUSTOM_COMMAND(
 DEPENDS clean
 COMMENT "distribution clean"
 COMMAND rm ARGS    -Rf ${DISTCLEANED}
-COMMAND xargs ARGS rm -f < install_manifest.txt
-COMMAND rm ARGS -f install_manifest.txt
+COMMAND test -e install_manifest.txt || xargs ARGS rm -f < install_manifest.txt
+COMMAND test -e install_manifest.txt || rm ARGS -f install_manifest.txt
 TARGET  distclean
 )
 
