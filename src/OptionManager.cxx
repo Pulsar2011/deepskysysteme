@@ -303,9 +303,6 @@ namespace DSL
         
         for(n = 0; n < argc ; n++)
         {
-//#ifdef __DEBUG__
-//            std::cout<<"ARG["<<n<<"] : "<<argv[n]<<std::endl;
-//#endif
             arg.push_back(std::string(argv[n]));
             
             if(arg[arg.size()-1][0] == '-' || arg[arg.size()-1][0] == '+')
@@ -323,9 +320,6 @@ namespace DSL
         std::vector<std::string>::const_iterator it=arg.cbegin();
         while(it != arg.cend())
         {
-//#ifdef __DEBUG__
-//            std::cout<<"OPT : "<<(*it)<<std::endl;
-//#endif
             //-- CONVERT TO LOWER CASE IF NEEDED
             if((*it)[0] != '-' && (*it)[0] != '+')
             {
@@ -337,10 +331,7 @@ namespace DSL
             
             if(!it->compare("-o") || !it->compare("--output"))
             {
-                if(std::next(it) != arg.cend()){it++;}else{it++; continue;}
-//#ifdef __DEBUG__
-//                std::cout<<"OPT : "<<(*it)<<std::endl;
-//#endif                
+                if(std::next(it) != arg.cend()){it++;}else{it++; continue;}               
                 output_file += std::string(*it);
                 std::cout<<"   \033[34m• Set output to \033[0m"<<output_file.c_str()<<std::endl;
             }

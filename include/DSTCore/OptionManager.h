@@ -110,7 +110,7 @@ namespace DSL
             
             AddOption(0,"-o/--output","FileName", "Path and name of the output file produced by the analyses, if any will be created.");
             AddOption(664,"-l/--log","FileName", "Redirect standard output to a logfile defined by \033[31mFileName\033[0m parameter value.");
-            AddOption(665,"-d/--debug","Activate high level debug.");
+            AddOption(665,"-d/--debug","int","Activate high level debug.");
             AddOption(666,"-h/--help","Show this message.");
         };						///< Default constructor;
         
