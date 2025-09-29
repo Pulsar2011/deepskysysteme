@@ -8,8 +8,8 @@
 //	Copyright (c) 2015, All rights reserved
 //
 
-#ifndef __DSS__OptionManager__
-#define __DSS__OptionManager__
+#ifndef __DSL__OptionManager__
+#define __DSL__OptionManager__
 
 #include<vector>
 #include<map>
@@ -25,7 +25,7 @@ namespace fs = std::filesystem;
 namespace fs boost::filesystem;
 #endif
 
-namespace DSS
+namespace DSL
 {
 #pragma mark - DOption class definition
     /**

@@ -4,11 +4,11 @@
 
 TEST(DSS_sytem_tools, create_dir)
 {
-    ASSERT_EQ(DSS::mkdir(PROJECT_DIR+std::string("/build/tmp")), true);
+    ASSERT_EQ(DSL::mkdir(PROJECT_DIR+std::string("/build/tmp")), true);
     ASSERT_EQ(fs::exists(PROJECT_DIR+std::string("/build/tmp")), true);
 }
 
-namespace DSS
+namespace DSL
 {
     class gTEST_manager: public DOption
     {
@@ -111,7 +111,7 @@ namespace DSS
     }
 }
 
-class gTEST_option: public DSS::DOption
+class gTEST_option: public DSL::DOption
 {
     private:
         bool fTest;
@@ -180,7 +180,7 @@ class gTEST_option: public DSS::DOption
         }
 
     public:
-        gTEST_option():DSS::DOption(),fTest(false),fUint(0),fInt(0),fFloat(0),fString(),fArray(0,0)
+        gTEST_option():DSL::DOption(),fTest(false),fUint(0),fInt(0),fFloat(0),fString(),fArray(0,0)
         {
             AddOption("-T","This is a basic test");
             AddOption("--Uint","uint","Test for uint param");
@@ -199,7 +199,7 @@ class gTEST_option: public DSS::DOption
     
 };
 
-TEST(DSS_DOption, default_constructor)
+TEST(DSL_DOption, default_constructor)
 {
     int args=7;
     char** argv= new char*[args];
@@ -259,7 +259,7 @@ TEST(DSS_DOption, default_constructor)
     ASSERT_EQ(manager.Arr().second,0)<<"Initialisation errors !!!";   
 }
 
-TEST(DSS_DOption, help_constructor)
+TEST(DSL_DOption, help_constructor)
 {
     int args=1;
     char** argv= new char*[args];
@@ -277,7 +277,7 @@ TEST(DSS_DOption, help_constructor)
    
 }
 
-TEST(DSS_DOption, optional_constructor)
+TEST(DSL_DOption, optional_constructor)
 {
     std::vector<std::string> opt=std::vector<std::string>();
     opt.push_back("-T");
@@ -316,7 +316,7 @@ TEST(DSS_DOption, optional_constructor)
     ASSERT_EQ(manager.Arr().second,324)<<"Initialisation errors !!!";    
 }
 
-TEST(DSS_DOption, test_exception)
+TEST(DSL_DOption, test_exception)
 {
     std::vector<std::string> opt=std::vector<std::string>();
     opt.push_back("-G");   
@@ -335,7 +335,7 @@ TEST(DSS_DOption, test_exception)
     EXPECT_THROW(manager.InitParameters(args,argv),std::runtime_error);
 }
 
-TEST(DSS_DOption, debug_as_bool)
+TEST(DSL_DOption, debug_as_bool)
 {
     std::vector<std::string> opt=std::vector<std::string>();
     opt.push_back("-d"); 
@@ -357,7 +357,7 @@ TEST(DSS_DOption, debug_as_bool)
     ASSERT_EQ(manager.DebugLevel(),1)<<"Debug not set !!!";
 }
 
-TEST(DSS_DOption, debug_level)
+TEST(DSL_DOption, debug_level)
 {
     std::vector<std::string> opt=std::vector<std::string>();
     opt.push_back("-d");
@@ -380,7 +380,7 @@ TEST(DSS_DOption, debug_level)
     ASSERT_EQ(manager.DebugLevel(),3)<<"Debug not set !!!";
 }
 
-TEST(DSS_DOption, test_missing_input)
+TEST(DSL_DOption, test_missing_input)
 {
     std::vector<std::string> opt=std::vector<std::string>();
     

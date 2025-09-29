@@ -13,7 +13,7 @@
 #include<iostream>
 
 // namespace DSS stand for DeepSkySys
-namespace DSS
+namespace DSL
 {
     std::string DOption::prg_name = std::string("");
     
