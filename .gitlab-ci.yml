@@ -22,8 +22,6 @@ before_script:
 
 deps:
   stage: .pre
-  script:
-  - echo "No-op: dependencies are installed per job"
 
 build:
   stage: build
