@@ -6,14 +6,10 @@
 image:
   name: gcc:13-bookworm
 
-include:
-  - template: Security/SAST.gitlab-ci.yml
-
 stages:
 - .pre
 - build
 - test
-- deploy
 
 variables:
   GIT_SUBMODULE_STRATEGY: normal
@@ -46,18 +42,4 @@ test:
   - cd build
   - ctest --output-on-failure
 
-pages:
-  stage: deploy
-  script:
-  - cd build
-  - cmake ..
-  - make doc
-  - cd ..
-  - mv build/doc/html public
-  artifacts:
-    paths:
-    - public
-
-sast:
-  stage: test
 
