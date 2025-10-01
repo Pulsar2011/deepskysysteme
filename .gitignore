@@ -28,6 +28,7 @@ test_*.txt
 DSS_version.cxx
 *screenlog*
 gdb
+CMakeDoxyfile.in
 
 *.html
 *.tex
