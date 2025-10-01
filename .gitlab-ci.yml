@@ -4,7 +4,7 @@
 # Note that environment variables can be set in several places
 # See https://docs.gitlab.com/ee/ci/variables/#priority-of-environment-variables
 image:
-  name: gitlab-registry.in2p3.fr/in2p3_euclid/gacen/dbbuilder_test:v1
+  name: gcc
 
 stages:
 - .pre
@@ -24,13 +24,13 @@ deps:
   - DEPS_DIR="${SRC_DIR}/deps"
   - mkdir -p deps && cd deps
   # we use wget to fetch the cmake binaries
-  - yumdownloader https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-x86_64.tar.gz
-  - yumdownloader https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-SHA-256.txt
-  - sha256sum -c cmake-3.23.2-SHA-256.txt
-  - tar -xvf cmake-3.23.2-linux-x86_64.tar.gz > /dev/null
-  - mv cmake-3.23.2-linux-x86_64 cmake-install
-  - PATH=${DEPS_DIR}/cmake-install:${DEPS_DIR}/cmake-install/bin:$PATH
-  - cd ${SRC_DIR}
+  #- yumdownloader https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-linux-x86_64.tar.gz
+  #- yumdownloader https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-SHA-256.txt
+  #- sha256sum -c cmake-3.23.2-SHA-256.txt
+  #- tar -xvf cmake-3.23.2-linux-x86_64.tar.gz > /dev/null
+  #- mv cmake-3.23.2-linux-x86_64 cmake-install
+  #- PATH=${DEPS_DIR}/cmake-install:${DEPS_DIR}/cmake-install/bin:$PATH
+  #- cd ${SRC_DIR}
 
 
 build:
@@ -64,5 +64,3 @@ pages:
     - public
 sast:
   stage: test
-include:
-- template: Security/SAST.gitlab-ci.yml
