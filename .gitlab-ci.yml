@@ -6,6 +6,9 @@
 image:
   name: gcc:13-bookworm
 
+include:
+  - template: Security/SAST.gitlab-ci.yml
+
 stages:
 - .pre
 - build
@@ -22,6 +25,8 @@ before_script:
 
 deps:
   stage: .pre
+  script:
+  - echo "No-op dependencies are installed per job"
 
 build:
   stage: build
@@ -55,6 +60,4 @@ pages:
 
 sast:
   stage: test
-include:
-- template: Security/SAST.gitlab-ci.yml
 
