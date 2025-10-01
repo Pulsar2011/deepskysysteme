@@ -16,6 +16,7 @@
 #include<string>
 #include<algorithm>
 #include<cstdio>
+#include <stdexcept>
 
 #if __cplusplus >= 201703L
 #include<filesystem>
