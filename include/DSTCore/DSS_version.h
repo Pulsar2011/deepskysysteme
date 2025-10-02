@@ -1,3 +1,10 @@
+//  Created by GILLARD William on 12/06/22.
+//  Centre de Physic des Particules de Marseille
+//  Licensed under CC BY-NC 4.0
+//  You may share and adapt this code with attribution, 
+//  but not for commercial purposes.
+//  Licence text: https://creativecommons.org/licenses/by-nc/4.0/
+
 #ifndef DSS_VERSION_H
 #define DSS_VERSION_H
 
