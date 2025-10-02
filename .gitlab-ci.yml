@@ -5,6 +5,7 @@
 # See https://docs.gitlab.com/ee/ci/variables/#priority-of-environment-variables
 image:
   name: gcc:13-bookworm
+  name: gcc:13-bookworm
 
 stages:
 - .pre
@@ -13,6 +14,11 @@ stages:
 
 variables:
   GIT_SUBMODULE_STRATEGY: normal
+  DEBIAN_FRONTEND: noninteractive
+
+before_script:
+  - apt-get update
+  - apt-get install -y cmake make
   DEBIAN_FRONTEND: noninteractive
 
 before_script:
@@ -28,8 +34,10 @@ build:
   stage: build
   script:
   - mkdir -p build
+  - mkdir -p build
   - cd build
   - cmake -Wno-dev ..
+  - make -j "$(nproc --all)"
   - make -j "$(nproc --all)"
   artifacts:
     expire_in: 2 hrs
