@@ -48,33 +48,45 @@ namespace DSL
     {
         gTEST_manager manager = gTEST_manager();
         size_t n_opt = manager.prg_option.size();
-        manager.AddOption("-t","test","this is a test option");
+        manager.AddOption("-j",{DParam::fparameter::folder,DParam::fparameter::file},"this is a test option");
+        manager.AddOption("-t",DParam::fparameter::string,"this is a test option");
         manager.AddOption("-T","this is a test option");
 
-        ASSERT_EQ(  manager.prg_option.size() ,n_opt+2)     <<"Incompatible number of option";
+        ASSERT_EQ(  manager.prg_option.size() ,n_opt+3)     <<"Incompatible number of option";
 
+        bool found_j=false;
         bool found_t=false;
         bool found_T=false;
 
-        for(std::map<unsigned int, std::vector<std::string> >::const_iterator it=manager.prg_option.cbegin(); it != manager.prg_option.cend(); it++)
+        for(std::map<size_t, DParam >::const_iterator it=manager.prg_option.cbegin(); it != manager.prg_option.cend(); it++)
         {
-            if(!(it->second[0].compare("-t")))
+            if(!(it->second.name().compare("-t")))
             {
                 found_t |= true;
-                ASSERT_EQ(  it->second.size()        ,3)     <<"Unconsistent -t option size";
-                ASSERT_EQ(!(it->second[0].compare("-t")),true)  <<"Unconsistent -t option parameters";
-                ASSERT_EQ(!(it->second[1].compare("test")),true)<<"Unconsistent -t option value";
-                ASSERT_EQ(!(it->second[2].compare("this is a test option")),true)<<"Unconsistent -t option description";
+                ASSERT_EQ(  it->second.optType().size()        ,1)  <<"Unconsistent -t option size";
+                ASSERT_EQ(!(it->second.name().compare("-t")),true)  <<"Unconsistent -t option parameters";
+                ASSERT_EQ(!(DParam::what(it->second.optType()[0]).compare("string")),true)<<"Unconsistent -t option value";
+                ASSERT_EQ(!(it->second.description().compare("this is a test option")),true)<<"Unconsistent -t option description";
             }
-            else if(!(it->second[0].compare("-T")))
+            else if(!(it->second.name().compare("-j")))
+            {
+                found_j |= true;
+                ASSERT_EQ(  it->second.optType().size()        ,2)  <<"Unconsistent -t option size";
+                ASSERT_EQ(!(it->second.name().compare("-j")),true)  <<"Unconsistent -t option parameters";
+                ASSERT_EQ(!(DParam::what(it->second.optType()[0]).compare("ULR")),true)<<"Unconsistent -t option value";
+                ASSERT_EQ(!(DParam::what(it->second.optType()[1]).compare("File")),true)<<"Unconsistent -t option value";
+                ASSERT_EQ(!(it->second.description().compare("this is a test option")),true)<<"Unconsistent -t option description";
+            }
+            else if(!(it->second.name().compare("-T")))
             {
                 found_T |= true;
-                ASSERT_EQ(  it->second.size()        ,3)        <<"Unconsistent -T option size";
-                ASSERT_EQ(!(it->second[0].compare("-T")),true)  <<"Unconsistent -T option parameters";
-                ASSERT_EQ(  it->second[1].size(),0)  <<"Unconsistent -t option value";
-                ASSERT_EQ(!(it->second[2].compare("this is a test option")),true)<<"Unconsistent -T option description";
+                ASSERT_EQ(  it->second.optType().size()        ,1)  <<"Unconsistent -t option size";
+                ASSERT_EQ(!(it->second.name().compare("-T")),true)  <<"Unconsistent -t option parameters";
+                ASSERT_EQ(it->second.optType()[0]==DParam::fparameter::none,true)<<"Unconsistent -t option value";
+                ASSERT_EQ(!(it->second.description().compare("this is a test option")),true)<<"Unconsistent -t option description";
             }
         }
+        ASSERT_EQ(found_j,true)<<"Option -j not found";
         ASSERT_EQ(found_t,true)<<"Option -t not found";
         ASSERT_EQ(found_T,true)<<"Option -T not found";
     }
@@ -90,14 +102,15 @@ namespace DSL
 
         bool found_param=false;
 
-        for(std::map<unsigned int, std::vector<std::string> >::const_iterator it=manager.prg_param.cbegin(); it != manager.prg_param.cend(); it++)
+        for(std::map<size_t, DParam >::const_iterator it=manager.prg_param.cbegin(); it != manager.prg_param.cend(); it++)
         {
-            if(!(it->second[0].compare("new_param")))
+            if(!(it->second.name().compare("new_param")))
             {
                 found_param |= true;
-                ASSERT_EQ(  it->second.size()        ,2)     <<"Unconsistent  parameter size";
-                ASSERT_EQ(!(it->second[0].compare("new_param")),true)<<"Unconsistent parameter value";
-                ASSERT_EQ(!(it->second[1].compare("  This is a new parameter")),true)<<"Unconsistent parameter description.";
+                ASSERT_EQ(it->second.optType().size()        ,1)     <<"Unconsistent  parameter size";
+                ASSERT_EQ(!(it->second.name().compare("new_param")),true)<<"Unconsistent parameter value";
+                ASSERT_EQ(!(it->second.description().compare("This is a new parameter")),true)<<"Unconsistent parameter description.";
+                ASSERT_EQ(it->second.isRequired(),true)<<"Unconsistent parameter required flag.";
             }
         }
         ASSERT_EQ(found_param,true)<<"Parameter not found";
@@ -110,6 +123,8 @@ namespace DSL
         ASSERT_EQ( !(manager.prg_description.compare("This is a test description")),true)     <<"Unconsistent prg synopsis.";
     }
 }
+
+using namespace DSL;
 
 class gTEST_option: public DSL::DOption
 {
@@ -183,14 +198,14 @@ class gTEST_option: public DSL::DOption
         gTEST_option():DSL::DOption(),fTest(false),fUint(0),fInt(0),fFloat(0),fString(),fArray(0,0)
         {
             AddOption("-T","This is a basic test");
-            AddOption("--Uint","uint","Test for uint param");
-            AddOption("--Int","int","Test for int param");
-            AddOption("--Float","foat","Test for float param");
-            AddOption("--String","str","Test for float param");
-            AddOption("--Array","int int","Test for int array");
+            AddOption("--Uint",DParam::fparameter::uint16,"Test for uint param");
+            AddOption("--Int",DParam::fparameter::int16,"Test for int param");
+            AddOption("--Float",DParam::fparameter::floatpoint,"Test for float param");
+            AddOption("--String",DParam::fparameter::string,"Test for float param");
+            AddOption("--Array",{DParam::fparameter::int32,DParam::fparameter::int32},"Test for int array");
         }
 
-        inline const bool& Test                 () const {return fTest;}
+        inline const bool& Test                     () const {return fTest;}
         inline const uint16_t& Uint                 () const {return fUint;}
         inline const int16_t& Int                   () const {return fInt;}
         inline const float&  Float                  () const {return fFloat;}
