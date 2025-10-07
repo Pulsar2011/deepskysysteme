@@ -54,15 +54,16 @@ namespace DSL
 #endif
         
         if(prg_option.size() > 1)
-            for(std::map<unsigned int, std::vector<std::string> >::iterator it = prg_option.begin(); it != prg_option.end(); it++)
+            for(std::map<size_t, DParam >::iterator it = prg_option.begin(); it != prg_option.end(); it++)
                 it->second.clear();
+        
         prg_option.clear();
         
         if(prg_param.size() > 1)
-            for(std::map<unsigned int, std::vector<std::string> >::iterator it = prg_param.begin(); it != prg_param.end(); it++)
+            for(std::map<size_t, DParam >::iterator it = prg_param.begin(); it != prg_param.end(); it++)
                 it->second.clear();
-        prg_param.clear();
         
+        prg_param.clear();
         prg_description.clear();
     }
     
@@ -71,17 +72,24 @@ namespace DSL
      * @details Add an optional parameter to the list of optional parameters that this program can accept.
      * @param opt_pos: Printing order of the optional parameters
      * @param opt: the option string
+     * @param type: The list of optional parameter types, if needed
+     * @param info: The description of the optional parameters
+     */
+    void DOption::AddOption(const size_t& opt_pos, const std::string& opt, const std::initializer_list<DParam::fparameter>& type, const std::string& info)
+    {        
+        prg_option.insert(std::pair<size_t, DParam >(opt_pos,DParam(opt,type,info,true)));
+    }
+
+    /**
+     * @details Add an optional parameter to the list of optional parameters that this program can accept.
+     * @param opt_pos: Printing order of the optional parameters
+     * @param opt: the option string
      * @param type: The optional parameter type, if needed
      * @param info: The description of the optional parameters
      */
-    void DOption::AddOption(unsigned int opt_pos, std::string opt, std::string type, std::string info)
-    {
-        std::vector<std::string> p_opt;
-        p_opt.push_back(opt);
-        p_opt.push_back(type);
-        p_opt.push_back(info);
-        
-        prg_option.insert(std::pair<unsigned int, std::vector<std::string> >(opt_pos,p_opt));
+    void DOption::AddOption(const size_t& opt_pos, const std::string& opt, const DParam::fparameter& type, const std::string& info)
+    {        
+        AddOption(opt_pos,opt,{type},info);
     }
     
     /**
@@ -90,20 +98,31 @@ namespace DSL
      * @param opt: the option string
      * @param info: The description of the optional parameters
      */
-    void DOption::AddOption(unsigned int opt_pos, std::string opt, std::string info)
+    void DOption::AddOption(const size_t& opt_pos, const std::string& opt, const std::string& info)
     {
-        AddOption(opt_pos, opt, "", info);
+        AddOption(opt_pos, opt, {DParam::fparameter::none}, info);
     }
     
+    /**
+     * @details Add an optional parameter to the list of optional parameters that this program can accept.
+     * @param opt: the option string
+     * @param type: The list of optional parameter types, if needed
+     * @param info: The description of the optional parameters
+     */
+    void DOption::AddOption(const std::string& opt, const std::initializer_list<DParam::fparameter>& type, const std::string& info)
+    {
+        AddOption(prg_option.size()+1,opt,type,info);
+    }
+
     /**
      * @details Add an optional parameter to the list of optional parameters that this program can accept.
      * @param opt: the option string
      * @param type: The optional parameter type, if needed
      * @param info: The description of the optional parameters
      */
-    void DOption::AddOption(std::string opt, std::string type, std::string info)
+    void DOption::AddOption(const std::string& opt, const DParam::fparameter& type, const std::string& info)
     {
-        AddOption(prg_option.size()+1,opt,type,info);
+        AddOption(opt,{type},info);
     }
     
     /**
@@ -111,9 +130,9 @@ namespace DSL
      * @param opt: the option string
      * @param info: The description of the optional parameters
      */
-    void DOption::AddOption(std::string opt, std::string info)
+    void DOption::AddOption(const std::string& opt, const std::string& info)
     {
-        AddOption(opt, "", info);
+        AddOption(opt,{DParam::fparameter::none}, info);
     }
     
     /**
@@ -133,13 +152,9 @@ namespace DSL
      * @param opt: the option string
      * @param info: The description of the optional parameters
      */
-    void DOption::AddParam(std::string opt, std::string info)
+    void DOption::AddParam(const std::string& opt, const std::string& info)
     {
-        std::vector<std::string> p_need;
-        p_need.push_back(opt);
-        p_need.push_back("  "+info);
-        
-        prg_param.insert(std::pair<unsigned int, std::vector<std::string> >(prg_param.size()+1,p_need));
+        prg_param.insert(std::pair<size_t, DParam >(prg_param.size()+1, DParam(opt,DParam::fparameter::none,info,true)));
     }
     /**
      * @details Printout program usage. This function is purelly virtual and should be replaced by users to adapt the printout to their code.
@@ -148,10 +163,10 @@ namespace DSL
     {
         PrintSynopsys();
         
-        printf("\n\033[22;31mOPTIONAL PARAMETERS\n");
+        printf("\n\033[22;34mOPTIONAL PARAMETERS\n");
         
         PrintOptions();
-        std::cout<<std::endl<<"\033[22;32m*****************************************************************************************\033[0m"<<std::endl<<std::endl<<std::endl;
+        std::cout<<std::endl<<"\033[22;32m***************************************************************************************************\033[0m"<<std::endl<<std::endl<<std::endl;
     }
     
     /**
@@ -163,47 +178,54 @@ namespace DSL
             prg_name += "DST::DOption";
         
         std::cout<<std::endl<<std::endl<<"\033[22;31m"<<prg_name<<" : \033[22;34mHelp"<<std::endl;
-        std::cout<<"\033[22;32m*****************************************************************************************\033[0m"<<std::endl<<std::endl;
+        std::cout<<"\033[22;32m***************************************************************************************************\033[0m"<<std::endl<<std::endl;
+        format_string(prg_description,true);
         std::cout<<prg_description<<std::endl;
-        std::cout<<std::endl<<"\033[22;32m*****************************************************************************************\033[0m"<<std::endl;
+        std::cout<<std::endl<<"\033[22;32m***************************************************************************************************\033[0m"<<std::endl;
         
+        size_t kSize = 0;
         std::string this_synopsis = std::string("\033[0m ");
-        for(std::map<unsigned int, std::vector<std::string> >::const_iterator it=prg_option.begin(); it != prg_option.end(); it++)
+        for(std::map<size_t, DParam >::const_iterator it=prg_option.begin(); it != prg_option.end(); it++)
         {
-            this_synopsis += "[\033[22;32m" + it->second.at(0) + "\033[0m";
+            this_synopsis += "[\033[22;32m"  + it->second.name() + "\033[0m";
             std::string opt_val;
-            if(it->second.at(1).size() > 0)
+            for(std::vector<DParam::fparameter>::const_iterator it2 = it->second.optType().cbegin(); it2 != it->second.optType().cend(); ++it2)
             {
-                opt_val = " \033[2;31m" + it->second.at(1) + "\033[0m";
-                
-                while(opt_val.find_first_of("|") != std::string::npos)
-                    opt_val.replace(opt_val.find_first_of("|"),1,",");
-                
-                while(opt_val.find_first_of(",") != std::string::npos)
-                    opt_val.replace(opt_val.find_first_of(","),1,"\033[0m|\033[2;31m");
-                
-                while(opt_val.find_first_of("/") != std::string::npos)
-                    opt_val.replace(opt_val.find_first_of("/"),1,"\033[0m|\033[2;31m");
+                if(it2==it->second.optType().cbegin())
+                    opt_val = " ";
+
+                opt_val += "\033[2;31m" + DParam::what(*it2) + "\033[0m";
+                if(it2 != it->second.optType().cend()-1)
+                    opt_val +="\033[0m ";
+
             }
-            
+
             this_synopsis += opt_val + "] ";
+            kSize += opt_val.size();
+
+            if(kSize > 60)
+            {
+                this_synopsis += "\n"+std::string(prg_name.size()+3,' ');
+
+                kSize = 0;
+            }
         }
         
-        for(std::map<unsigned int, std::vector<std::string> >::const_iterator it=prg_param.begin(); it != prg_param.end(); it++)
+        for(std::map<size_t, DParam >::const_iterator it=prg_param.begin(); it != prg_param.end(); it++)
         {
-            this_synopsis += it->second.at(0) + " ";
+            this_synopsis += it->second.name() + " ";
         }
         
-        format_string(this_synopsis,true);
+        //format_string(this_synopsis);
         
         std::cout<<"  \033[31m"<<prg_name<<this_synopsis<<std::endl<<std::endl;
         
-        std::cout<<std::endl<<"\033[22;31mREQUIRED PARAMETERS\033[0m"<<std::endl;
+        std::cout<<std::endl<<"\033[22;33mREQUIRED PARAMETERS\033[0m"<<std::endl;
         
-        for(std::map<unsigned int, std::vector<std::string> >::const_iterator it=prg_param.begin(); it != prg_param.end(); it++)
+        for(std::map<size_t,DParam>::const_iterator it=prg_param.begin(); it != prg_param.end(); it++)
         {
-            std::cout<<"  "<<it->second.at(0)<<std::endl;
-            std::cout<<it->second.at(1)<<std::endl;
+            std::cout<<"  "<<it->second.name()<<"   "<<it->second.paramString()<<std::endl;
+            std::cout<<it->second.description()<<std::endl;
         }
         
     }
@@ -213,29 +235,20 @@ namespace DSL
      */
     void DOption::PrintOptions()
     {
-        for(std::map<unsigned int, std::vector<std::string> >::const_iterator it=prg_option.begin(); it != prg_option.end(); it++)
+        for(std::map<size_t,DParam >::const_iterator it=prg_option.cbegin(); it != prg_option.cend(); it++)
         {
-            std::string opt_name = "  \033[22;32m" + it->second.at(0) + "\033[0m";
+            std::string opt_name = "  \033[22;32m" + it->second.name() + "\033[0m";
             std::string opt_val  = std::string();
-            if(it->second.size() > 2)
-                for(unsigned int n = 1; n < it->second.size()-1; n++)
-                    opt_val += "\033[2;31m" + it->second.at(n) + "\033[0m ";
-            
-            while(opt_val.find_first_of("|") != std::string::npos)
-                opt_val.replace(opt_val.find_first_of("|"),1,",");
-            
-            while(opt_val.find_first_of(",") != std::string::npos)
-                opt_val.replace(opt_val.find_first_of(","),1,"\033[0m|\033[2;31m");
-            
-            while(opt_val.find_first_of("/") != std::string::npos)
-                opt_val.replace(opt_val.find_first_of("/"),1,"\033[0m|\033[2;31m");
-            
-            while(opt_name.find_first_of("/") != std::string::npos)
-                opt_name.replace(opt_name.find_first_of("/"),1,"\033[0m "+opt_val+" or\n  \033[22;32m");
-            
+            for(std::vector<DParam::fparameter>::const_iterator it2 = it->second.optType().cbegin(); it2 != it->second.optType().cend(); ++it2)
+            {
+                    opt_val += "\033[2;31m" + DParam::what(*it2) + "\033[0m";
+                    if(it2 != it->second.optType().cend()-1)
+                        opt_val +="\033[0m ";
+            }
+
             std::cout<<opt_name<<" "<<opt_val<<std::endl;
             
-            std::string opt_info = "  "+it->second.at(it->second.size()-1);
+            std::string opt_info = "  "+it->second.description();
             format_string(opt_info);
             
             std::cout<<opt_info<<std::endl<<std::endl;
@@ -244,7 +257,7 @@ namespace DSL
     
     void DOption::format_string(std::string &str, bool isSynopsis)
     {
-        int length = 90;
+        int length = 80;
         
         std::string wspace = std::string("  ");
         if(isSynopsis)
@@ -319,15 +332,20 @@ namespace DSL
                 return false;
             }
         }
+
+        std::cout<<"\033[22;34m>>>>>>>>>> Program: \033[0m"<<prg_name<<std::endl;
         
         std::vector<std::string>::const_iterator it=arg.cbegin();
         while(it != arg.cend())
         {
             //-- CONVERT TO LOWER CASE IF NEEDED
-            if((*it)[0] != '-' && (*it)[0] != '+')
+            if((*it)[0] != '-' && (*it)[0] != '+' )
             {
-                filelist.push_back(std::string(*it));
-                std::cout<<"   \033[34m• Add input file \033[0m"<<(--filelist.end())->c_str()<<std::endl;
+                if(it != arg.cbegin())
+                {
+                    filelist.push_back(std::string(*it));
+                    std::cout<<"   \033[34m• Add input file \033[0m"<<(--filelist.end())->c_str()<<std::endl;
+                }
                 it++;
                 continue;
             }
