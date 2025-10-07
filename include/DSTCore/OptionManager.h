@@ -19,6 +19,8 @@
 #include<algorithm>
 #include<cstdio>
 #include <stdexcept>
+#include <initializer_list>
+
 
 #if __cplusplus >= 201703L
 #include<filesystem>
@@ -30,6 +32,124 @@ namespace fs boost::filesystem;
 
 namespace DSL
 {
+
+    class DParam
+    {    
+        public:
+
+        enum class fparameter : uint32_t
+        {
+            none  ,
+            file  ,
+            folder,
+            string,
+            int8  ,
+            int16 ,
+            int32 ,
+            int64 ,
+            uint8 ,
+            uint16,
+            uint32,
+            uint64,
+            floatpoint,
+            doublepoint,
+            xoffset,
+            yoffset,
+            xsize,
+            ysize,
+            size,
+            min,
+            max
+        };
+
+        static std::string what(const fparameter& ff)
+        {
+            switch(ff)
+            {
+                case fparameter::none        :
+                    return "";
+                case fparameter::file        :
+                    return "File";
+                case fparameter::folder      :
+                    return "ULR";
+                case fparameter::string      :
+                    return "string";
+                case fparameter::int8        :
+                case fparameter::int16       :
+                case fparameter::int32       :
+                case fparameter::int64       :
+                    return "int";
+                case fparameter::uint8       :
+                case fparameter::uint16      :
+                case fparameter::uint32      :
+                case fparameter::uint64      : 
+                    return "uInt";
+                case fparameter::floatpoint  :
+                case fparameter::doublepoint : 
+                    return "float";
+                case fparameter::xoffset     :
+                    return "x0";
+                case fparameter::yoffset     :
+                    return "y0";
+                case fparameter::xsize       :
+                    return "xsize";
+                case fparameter::ysize       :
+                    return "ysize";
+                case fparameter::size        :
+                    return "size";
+                case fparameter::min         :
+                    return "min";
+                case fparameter::max         :
+                    return "max";
+                default                      : 
+                    return "";
+            }
+        };
+
+        private:
+            std::string fparam;
+            std::vector<fparameter> ftype;
+            std::string fdescription;
+            bool frequired = false;
+
+        public:
+            DParam(const std::string& param, const fparameter& type, const std::string& description, bool required=false):fparam(param),ftype(1,type),fdescription(description),frequired(required){};
+            DParam(const std::string& param, const std::initializer_list<fparameter>& type, const std::string& description, bool required=false):fparam(param),ftype(type),fdescription(description),frequired(required){};
+            DParam(const std::string& param, const std::vector<fparameter>& type, const std::string& description, bool required=false):fparam(param),ftype(type),fdescription(description),frequired(required){};
+            DParam(const DParam& p):fparam(p.fparam),ftype(p.ftype),fdescription(p.fdescription),frequired(p.frequired){};
+
+            inline std::string paramString() const
+            { 
+                return fparam+" "+typeString()+" : "+fdescription;
+            }
+
+            void clear()
+            {
+                fparam.clear();
+                ftype.clear();
+                fdescription.clear();
+                frequired = false;
+            }
+
+            inline const std::string& name () const {return fparam;}
+            inline const std::string typeString() const
+            {
+                std::string s;
+                for(std::vector<fparameter>::const_iterator it=ftype.cbegin(); it!=ftype.cend(); ++it)
+                {
+                    if(it != ftype.cbegin())
+                        s+=" ";
+                    s+=what(*it);
+                }
+
+                return s;
+            }
+            inline const std::string description() const {return fdescription;}
+            inline const bool& isRequired() const {return frequired;}
+            inline const std::vector<fparameter>& optType() const {return ftype;}
+    };
+
+    
 #pragma mark - DOption class definition
     /**
      *  @namespace DSS
@@ -66,8 +186,11 @@ namespace DSL
         
         
         std::string prg_description;                                  ///< The program description that will be display when the '-h' or '--help' option will be given.
-        std::map<unsigned int, std::vector<std::string> > prg_option; ///< List of optional parameter that the programme can accept
-        std::map<unsigned int, std::vector<std::string> > prg_param;  ///< List of required parameters that the program need to run
+        //std::map<unsigned int, std::vector<std::string> > prg_option; ///< List of optional parameter that the programme can accept
+        //std::map<unsigned int, std::vector<std::string> > prg_param;  ///< List of required parameters that the program need to run
+
+        std::map<size_t,DParam> prg_option; ///< List of optional parameter that the programme can accept
+        std::map<size_t,DParam> prg_param;  ///< List of required parameters that the program need to run
         
     protected:
         
@@ -78,11 +201,13 @@ namespace DSL
         void PrintSynopsys();
         void PrintOptions();
         
-        void AddOption(std::string, std::string, std::string); ///< Add optional parameter
-        void AddOption(std::string, std::string);              ///< Add optional parameter
-        void AddOption(unsigned int, std::string, std::string, std::string); ///< Add optional parameter
-        void AddOption(unsigned int, std::string, std::string);              ///< Add optional parameter
-        void AddParam (std::string, std::string);              ///< Add required parameter
+        void AddOption(const std::string&, const DParam::fparameter&, const std::string&);                                      ///< Add optional parameter
+        void AddOption(const std::string&, const std::initializer_list<DParam::fparameter>&, const std::string&);                ///< Add optional parameter
+        void AddOption(const std::string&, const std::string&);                                                                 ///< Add optional parameter
+        void AddOption(const size_t&, const std::string&, const DParam::fparameter&, const std::string&);                       ///< Add optional parameter
+        void AddOption(const size_t&, const std::string&, const std::initializer_list<DParam::fparameter>&, const std::string&);///< Add optional parameter
+        void AddOption(const size_t&, const std::string&,  const std::string&);                                                 ///< Add optional parameter
+        void AddParam (const std::string&, const std::string&);                                                                 ///< Add required parameter
         void AddDescription(std::string);                      ///< Add programme description
         
         void format_string(std::string &, bool isSynopsis = false);        ///< Format string befor printing on standard display
@@ -98,6 +223,7 @@ namespace DSL
         
     public:
         
+
         DOption():filelist(),logfile(),prg_description(),prg_option(),prg_param(),output_file(),level(0)
         {
 
@@ -111,9 +237,9 @@ namespace DSL
             
             prg_description = std::string("DOption class reads and manage optional parameters given as input to the main executable. DOption allows to parse those parameters to analyses chain. DOption is a singleton class that can be overwritten to customize optional parameters specific to a given analyses. This can be done by overwritting the UserParameters function to initiate the parameters. In that case, \033[31m do not forget to add your optional parameter and required parameter to the DOption class in order that PrintSynopsys() as well as PrintOption() are able to parse specific documentationto the users\033[0m.");
             
-            AddOption(0,"-o/--output","FileName", "Path and name of the output file produced by the analyses, if any will be created.");
-            AddOption(664,"-l/--log","FileName", "Redirect standard output to a logfile defined by \033[31mFileName\033[0m parameter value.");
-            AddOption(665,"-d/--debug","int","Activate high level debug.");
+            AddOption(0,"-o/--output",DParam::fparameter::file, "Path and name of the output file produced by the analyses, if any will be created.");
+            AddOption(664,"-l/--log",DParam::fparameter::file, "Redirect standard output to a logfile defined by \033[31mFileName\033[0m parameter value.");
+            AddOption(665,"-d/--debug",DParam::fparameter::uint32,"Activate high level debug.");
             AddOption(666,"-h/--help","Show this message.");
         };						///< Default constructor;
         
