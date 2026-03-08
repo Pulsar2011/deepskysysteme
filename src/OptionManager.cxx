@@ -398,7 +398,11 @@ namespace DSL
             it++;
         }
         
-        if(filelist.size() < 1)
+        // Only enforce the positional-file requirement when the subclass explicitly
+        // declared required parameters via AddParam(). Programs that work entirely
+        // through keyword options (no positional file arguments) should simply not
+        // call AddParam(), and this check will be skipped automatically.
+        if(prg_param.size() > 0 && filelist.size() < prg_param.size())
         {
             std::string err_str = std::string("\033[43;36m[");
             err_str+=prg_name;
