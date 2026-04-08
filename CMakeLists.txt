@@ -79,10 +79,15 @@ set(BUILD_SHARED_LIBS "YES")
 
 #-------------------- GCC specifics
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    # Linux specific code (homogenized)
+    # Linux specific code
     cmake_policy(SET CMP0069 NEW)
-    set(CMAKE_SYSTEM_PROCESSOR x86_64)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -pipe -pthread -fexceptions -fPIC -m64 -Wno-unknown-pragmas -Wmisleading-indentation -flto -mtune=native -ffp-contract=on -fomit-frame-pointer")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -pipe -pthread -fexceptions -fPIC -Wno-unknown-pragmas -Wmisleading-indentation -flto -mtune=native -ffp-contract=on -fomit-frame-pointer")
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
+        ADD_DEFINITIONS(-DLinuxx86_64)
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+        ADD_DEFINITIONS(-DLinuxaarch64)
+    endif()
 
     # Enable Interprocedural Optimization (LTO) when supported on Linux
     include(CheckIPOSupported)
@@ -92,7 +97,6 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     endif()
 
     set(OperatingSystem "Linux")
-    ADD_DEFINITIONS(-DLinuxx86_64)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     set(CMAKE_CXX_EXTENSIONS OFF)
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
