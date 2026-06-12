@@ -227,31 +227,31 @@ TEST(DSL_DOption, default_constructor)
 
     uint16_t k=0;
 
-    argv[k] = new char[d.first.size()];
+    argv[k] = new char[d.first.size() + 1];
     strcpy(argv[k],d.first.c_str());
     k++;
 
-    argv[k] = new char[d.second.size()];
+    argv[k] = new char[d.second.size() + 1];
     strcpy(argv[k],d.second.c_str());
     k++;
 
-    argv[k] = new char[o.first.size()];
+    argv[k] = new char[o.first.size() + 1];
     strcpy(argv[k],o.first.c_str());
     k++;
 
-    argv[k] = new char[o.second.size()];
+    argv[k] = new char[o.second.size() + 1];
     strcpy(argv[k],o.second.c_str());
     k++;
 
-    argv[k] = new char[f1.size()];
+    argv[k] = new char[f1.size() + 1];
     strcpy(argv[k],f1.c_str());
     k++;
 
-    argv[k] = new char[f2.size()];
+    argv[k] = new char[f2.size() + 1];
     strcpy(argv[k],f2.c_str());
     k++;
 
-    argv[k] = new char[f3.size()];
+    argv[k] = new char[f3.size() + 1];
     strcpy(argv[k],f3.c_str());
     k++;
 
@@ -283,7 +283,7 @@ TEST(DSL_DOption, help_constructor)
 
     uint16_t k=0;
 
-    argv[k] = new char[opt.size()];
+    argv[k] = new char[opt.size() + 1];
     strcpy(argv[k],opt.c_str());
     k++;
 
@@ -316,7 +316,7 @@ TEST(DSL_DOption, optional_constructor)
     for(size_t i=0; i < opt.size(); i++)
     {
         int k= static_cast<int>(i);
-        argv[k] = new char[opt[i].size()];
+        argv[k] = new char[opt[i].size() + 1];
         strcpy(argv[k],opt[i].c_str());
     }
 
@@ -342,7 +342,7 @@ TEST(DSL_DOption, test_exception)
     for(size_t i=0; i < opt.size(); i++)
     {
         int k= static_cast<int>(i);
-        argv[k] = new char[opt[i].size()];
+        argv[k] = new char[opt[i].size() + 1];
         strcpy(argv[k],opt[i].c_str());
     }
 
@@ -362,7 +362,7 @@ TEST(DSL_DOption, debug_as_bool)
     for(size_t i=0; i < opt.size(); i++)
     {
         int k= static_cast<int>(i);
-        argv[k] = new char[opt[i].size()];
+        argv[k] = new char[opt[i].size() + 1];
         strcpy(argv[k],opt[i].c_str());
     }
 
@@ -385,7 +385,7 @@ TEST(DSL_DOption, debug_level)
     for(size_t i=0; i < opt.size(); i++)
     {
         int k= static_cast<int>(i);
-        argv[k] = new char[opt[i].size()];
+        argv[k] = new char[opt[i].size() + 1];
         strcpy(argv[k],opt[i].c_str());
     }
 
@@ -405,7 +405,7 @@ TEST(DSL_DOption, test_missing_input)
     for(size_t i=0; i < opt.size(); i++)
     {
         int k= static_cast<int>(i);
-        argv[k] = new char[opt[i].size()];
+        argv[k] = new char[opt[i].size() + 1];
         strcpy(argv[k],opt[i].c_str());
     }
 
