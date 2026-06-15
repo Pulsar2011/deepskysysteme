@@ -97,3 +97,5 @@ doc/html
 
 #--------------- GOOGLE TEST 
 googletest/generated
+cmake_*
+.gitlab-ci-local
