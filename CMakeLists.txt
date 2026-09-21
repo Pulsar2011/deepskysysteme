@@ -129,7 +129,13 @@ if(WITH_DEBUG)
 	message("${Blue}-- DEBUG MODE ACTIVATED${ColourReset}")
 	add_definitions(-D__DEBUG__)
 	set(CMAKE_BUILD_TYPE DEBUG)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
+	# LTO prevents LLDB/GDB from resolving debug info cleanly (replaces .o
+	# files with bitcode, degrading the debug map) -- strip it for debug
+	# builds, same as deepskyfits.
+	string(REPLACE "-flto=thin" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	string(REPLACE "-flto" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fsanitize=address -fno-omit-frame-pointer")
 else(WITH_DEBUG)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 endif(WITH_DEBUG)
