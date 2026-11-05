@@ -213,6 +213,18 @@ add_library(
     ${version_file}
 )
 
+# Propagate the git tag to the library. A clone without a reachable tag (e.g. a shallow CI clone)
+# has no numeric version: the library stays unversioned and no CMake package is installed.
+if(VERSION MATCHES "^v[0-9]+\\.[0-9]+\\.[0-9]+")
+    set(DSTCore_NUMERIC_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+    set_target_properties(DSTCore PROPERTIES
+        VERSION   "${DSTCore_NUMERIC_VERSION}"
+        SOVERSION "${VERSION_MAJOR}"
+    )
+else()
+    message(WARNING "No version tag found (git describe gave '${VERSION}'): DSTCore will not be versioned")
+endif()
+
 #-------------------- Configuration des test
 add_subdirectory(googletest   EXCLUDE_FROM_ALL)
 include_directories(${PARENT_PATH_OF_GTEST}/googltest/googltest/include)
@@ -271,6 +283,7 @@ CMakeFiles
 ./build/lib
 ./build/exe
 ./build/test
+./build/cmake
 ./doc
 ./googletest/CMakeFiles
 ./googletest/Makefile
@@ -299,4 +312,42 @@ if(CMAKE_INSTALL_PREFIX)
 		LIBRARY DESTINATION lib
 		ARCHIVE DESTINATION lib
 )
+
+    if(DSTCore_NUMERIC_VERSION)
+        # CMake package, so that dependent projects can call find_package(DSTCore <version>)
+        include(CMakePackageConfigHelpers)
+        set(DSTCore_CMAKE_DIR lib/cmake/DSTCore)
+        configure_package_config_file(
+            ${CMAKE_SOURCE_DIR}/modules/DSTCoreConfig.cmake.in
+            ${CMAKE_CURRENT_BINARY_DIR}/build/cmake/DSTCoreConfig.cmake
+            INSTALL_DESTINATION ${DSTCore_CMAKE_DIR}
+        )
+        write_basic_package_version_file(
+            ${CMAKE_CURRENT_BINARY_DIR}/build/cmake/DSTCoreConfigVersion.cmake
+            VERSION ${DSTCore_NUMERIC_VERSION}
+            COMPATIBILITY AnyNewerVersion
+        )
+        INSTALL(FILES
+            ${CMAKE_CURRENT_BINARY_DIR}/build/cmake/DSTCoreConfig.cmake
+            ${CMAKE_CURRENT_BINARY_DIR}/build/cmake/DSTCoreConfigVersion.cmake
+            DESTINATION ${DSTCore_CMAKE_DIR}
+        )
+
+        # CMake never removes files from the install directory: drop the versioned libraries
+        # (libDSTCore.2.0.1.dylib, libDSTCore.so.2.0.1, ...) left behind by previous installs.
+        install(CODE "set(DSTCore_KEEP_VERSIONS \"${DSTCore_NUMERIC_VERSION};${VERSION_MAJOR}\")")
+        install(CODE [[
+            file(GLOB _dss_libs "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/libDSTCore.*")
+            foreach(_dss_lib ${_dss_libs})
+                get_filename_component(_dss_name "${_dss_lib}" NAME)
+                if(_dss_name MATCHES "^libDSTCore\\.(so\\.)?([0-9.]*[0-9])(\\.dylib)?$")
+                    list(FIND DSTCore_KEEP_VERSIONS "${CMAKE_MATCH_2}" _dss_keep)
+                    if(_dss_keep EQUAL -1)
+                        message(STATUS "Removing old library: ${_dss_lib}")
+                        file(REMOVE "${_dss_lib}")
+                    endif()
+                endif()
+            endforeach()
+        ]])
+    endif()
 endif(CMAKE_INSTALL_PREFIX)

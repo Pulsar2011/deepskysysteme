@@ -1,0 +1,11 @@
+@PACKAGE_INIT@
+
+if(NOT TARGET DSTCore::DSTCore)
+    add_library(DSTCore::DSTCore SHARED IMPORTED)
+    set_target_properties(DSTCore::DSTCore PROPERTIES
+        IMPORTED_LOCATION "${PACKAGE_PREFIX_DIR}/lib/libDSTCore${CMAKE_SHARED_LIBRARY_SUFFIX}"
+        INTERFACE_INCLUDE_DIRECTORIES "${PACKAGE_PREFIX_DIR}/include"
+    )
+endif()
+
+check_required_components(DSTCore)
