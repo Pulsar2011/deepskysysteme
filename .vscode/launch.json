@@ -8,8 +8,9 @@
         "name": "gTest_version [dbg]",
          "type": "cppdbg",
         "request": "launch",
-        "program": "${workspaceFolder}/build/exe/gTest_version",
-        "cwd": "${workspaceFolder}",
+        "preLaunchTask": "build asan",
+        "program": "${workspaceFolder}/build-asan/bin/gTest_version",
+        "cwd": "${workspaceFolder}/build-asan",
         "osx": {
             "MIMode": "lldb"
         }
@@ -18,8 +19,9 @@
         "name": "gTest_Manager [dbg]",
          "type": "cppdbg",
         "request": "launch",
-        "program": "${workspaceFolder}/build/exe/gTest_Manager",
-        "cwd": "${workspaceFolder}",
+        "preLaunchTask": "build asan",
+        "program": "${workspaceFolder}/build-asan/bin/gTest_Manager",
+        "cwd": "${workspaceFolder}/build-asan",
         "osx": {
             "MIMode": "lldb"
         }

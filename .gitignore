@@ -99,3 +99,9 @@ doc/html
 googletest/generated
 cmake_*
 .gitlab-ci-local
+
+# Build trees of the CMake presets (build/ is ignored above), and personal presets
+build-*/
+CMakeUserPresets.json
+# The project's own CMake scripts are sources
+!cmake/*.cmake

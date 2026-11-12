@@ -3,41 +3,51 @@
 # Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/#customizing-settings
 # Note that environment variables can be set in several places
 # See https://docs.gitlab.com/ee/ci/variables/#priority-of-environment-variables
-image:
-  name: gcc:13-bookworm
 
-stages:
-- .pre
-- build
-- test
+# Every job runs in a fresh container of this image: packages installed by one job are not seen by
+# the others, so each job installs what it needs (BUILD_PACKAGES below). buildpack-deps:trixie is
+# Debian 13 with the build tools already in: GCC 14, make, autoconf/automake/libtool, pkg-config,
+# git, curl and the zlib, bzip2 and curl headers. Its apt provides clang 19 and CMake 3.31.
+image:
+  name: buildpack-deps:trixie
 
 variables:
   GIT_SUBMODULE_STRATEGY: normal
   DEBIAN_FRONTEND: noninteractive
+  # Compilers are named explicitly: left to itself, CMake takes /usr/bin/cc and c++, which are GCC 14.
+  # Every job that configures must install clang, and llvm for llvm-ar, used by the link-time
+  # optimisation of the release build. For GCC 14, set CC: gcc and CXX: g++.
+  CC: clang
+  CXX: clang++
+  # Packages of the build, of the DeepSky libraries it needs (deps job) and of its tests
+  BUILD_PACKAGES: "cmake clang llvm"
 
-before_script:
-  - apt-get update
-  - apt-get install -y cmake make
+stages:
+- build
+- test
 
-deps:
-  stage: .pre
-  script:
-  - echo "No-op dependencies are installed per job"
+.install_packages: &install_packages
+  - apt-get update -qq
+  - apt-get install -y -qq --no-install-recommends $BUILD_PACKAGES
 
 build:
   stage: build
+  before_script: *install_packages
   script:
-  - mkdir -p build
-  - cd build
-  - cmake -Wno-dev ..
-  - make -j "$(nproc --all)"
+    - git fetch --tags --force || true
+    # Same presets as on the workstations (CMakePresets.json): Release build in build/
+    - cmake --preset default
+    - cmake --build --preset default --parallel 2
   artifacts:
     expire_in: 2 hrs
     paths:
-    - build
+    - build/
 
 test:
   stage: test
+  needs:
+    - job: build
+      artifacts: true
+  before_script: *install_packages
   script:
-  - cd build
-  - ctest --output-on-failure
+  - ctest --preset default
