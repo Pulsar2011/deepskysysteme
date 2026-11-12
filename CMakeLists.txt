@@ -1,15 +1,30 @@
-#-------------------- Configuration du projet
 #-------------------- CMAKE Configuration
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+cmake_minimum_required(VERSION 3.24)
 
-project(DeepSkyProject CXX)
-message("${Green}-- Project source directory :" ${CMAKE_SOURCE_DIR} "${ColourReset}")
-
-set(CMAKE_BUILD_DIRECTORY ./build)
-
-if(DEFINED ENV{DeepSkyROOT})
-    set(DeepSkyROOT $ENV{DeepSkyROOT})
+# -Wno-dev by default (developer and deprecation warnings, mostly from the submodules): no need to
+# pass it, nor to alias cmake with it, which breaks 'cmake --build' and 'cmake --install'.
+# 'cmake -Wdev ...' shows them again.
+if(NOT DEFINED CACHE{CMAKE_SUPPRESS_DEVELOPER_WARNINGS})
+    set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE INTERNAL "Suppress developer warnings (-Wno-dev)")
 endif()
+
+# Everything is generated in a build directory, never in the sources: from the project directory,
+# 'cmake --preset default' (or 'cmake -B build'); from a build directory, 'cmake <path to project>'.
+get_filename_component(_src "${CMAKE_SOURCE_DIR}" REALPATH)
+get_filename_component(_bin "${CMAKE_BINARY_DIR}" REALPATH)
+if(_src STREQUAL _bin)
+    message(FATAL_ERROR
+        "In-source builds are not allowed. Remove what this run (and any former in-source build) created:\n"
+        "    cmake -P cmake/CleanInSourceBuild.cmake\n"
+        "then, from the project directory:\n"
+        "    cmake --preset default        (or: cmake -B build)\n"
+        "    cmake --build build -j\n"
+        "    cmake --build build --target install\n"
+        "Other presets: debug (build-debug/), asan (build-asan/).\n"
+        "Or from a build directory: mkdir build && cd build && cmake .. && make")
+endif()
+
+project(DeepSkySys LANGUAGES CXX)
 
 if(NOT WIN32)
     string(ASCII 27 Esc)
@@ -31,323 +46,260 @@ if(NOT WIN32)
     set(BoldWhite   "${Esc}[1;37m")
 endif()
 
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/../. CACHE PATH "default install path" FORCE)
-endif()
+message("${BoldCyan}----------- DeepSkySys (DSTCore) -----------${ColourReset}")
+message("${Green}-- Project source directory :${ColourReset} ${CMAKE_SOURCE_DIR}")
+message("${Green}-- Project build directory  :${ColourReset} ${CMAKE_BINARY_DIR}")
 
-set(EXECUTABLE_OUTPUT_PATH ./build/exe/)
-set(LIBRARY_OUTPUT_PATH ./build/lib/)
+if(DEFINED ENV{DeepSkyROOT})
+    set(DeepSkyROOT $ENV{DeepSkyROOT})
+else()
+    set(DeepSkyROOT ${CMAKE_SOURCE_DIR}/..)
+endif()
+get_filename_component(DeepSkyROOT "${DeepSkyROOT}" ABSOLUTE)
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX ${DeepSkyROOT} CACHE PATH "default install path" FORCE)
+endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/modules")
 
-message("${BoldYellow}-- CMAKE INSTALL PREFIX : ${ColourReset}" ${CMAKE_INSTALL_PREFIX})
+#-------------------- Options
+option(WITH_ASAN   "Build DSTCore and its tests with AddressSanitizer" OFF)
+option(BUILD_TESTS "Build the GoogleTest suite" ON)
+option(WITH_DEBUG  "Deprecated: same as CMAKE_BUILD_TYPE=Debug and WITH_ASAN=ON (use the asan preset)" OFF)
 
-#-------------------- COMPILER
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++23" COMPILER_SUPPORTS_CXX23)
-CHECK_CXX_COMPILER_FLAG("-std=c++20" COMPILER_SUPPORTS_CXX20)
-CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-
-if(COMPILER_SUPPORTS_CXX23)
-    message("-- USE CXX23 STANDARD")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++23")
-    set(CMAKE_CXX_STANDARD "23")
-elseif(COMPILER_SUPPORTS_CXX20)
-    message("-- USE CXX20 STANDARD")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
-    set(CMAKE_CXX_STANDARD "20")
-elseif(COMPILER_SUPPORTS_CXX17)
-    message("-- USE CXX17 STANDARD")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-    set(CMAKE_CXX_STANDARD "17")
-elseif(COMPILER_SUPPORTS_CXX11)
-    message("-- USE CXX11 STANDARD")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-    set(CMAKE_CXX_STANDARD "11")
-elseif(COMPILER_SUPPORTS_CXX0X)
-    message("-- USE CX0X STANDARD")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-else()
-	message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++17 nor C++11 nor C++0x support. Please use a different C++ compiler.")
+if(WITH_DEBUG)
+    message(WARNING "WITH_DEBUG is deprecated: use 'cmake --preset asan' (Debug + AddressSanitizer, in build-asan/)")
+    set(CMAKE_BUILD_TYPE Debug)
+    set(WITH_ASAN ON)
 endif()
 
-set(BUILD_SHARED_LIBS "YES")
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
 
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -v")
+# Products of this build: executables in bin/, libraries in lib/ (objects stay in CMakeFiles/)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-#-------------------- GCC specifics
-IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    # Linux specific code
-    cmake_policy(SET CMP0069 NEW)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -pipe -pthread -fexceptions -fPIC -Wno-unknown-pragmas -Wmisleading-indentation -flto -mtune=native -ffp-contract=on -fomit-frame-pointer")
+# The highest standard the compiler supports, from C++23 down
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED OFF)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+# compile_commands.json in the build directory, for clangd / IntelliSense
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+#-------------------- COMPILER
+# These flags apply to every C++ target of this directory, the googletest submodule included.
+set(_release "$<AND:$<COMPILE_LANGUAGE:CXX>,$<CONFIG:Release>>")
+set(_debug   "$<AND:$<COMPILE_LANGUAGE:CXX>,$<CONFIG:Debug>>")
+
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    set(OperatingSystem "Linux")
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-Wall;-pipe;-pthread;-fexceptions;-Wno-unknown-pragmas;-Wmisleading-indentation;-mtune=native;-ffp-contract=on>")
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
-        ADD_DEFINITIONS(-DLinuxx86_64)
+        add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-m64>")
+        add_compile_definitions(Linuxx86_64)
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
-        ADD_DEFINITIONS(-DLinuxaarch64)
+        add_compile_definitions(Linuxaarch64)
     endif()
-
-    # Enable Interprocedural Optimization (LTO) when supported on Linux
+    add_compile_options("$<${_release}:-flto>")
+    add_link_options(-pthread "$<$<CONFIG:Release>:-flto>")
+    # Interprocedural optimization (LTO) of the release build, when supported
     include(CheckIPOSupported)
     check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
     if(ipo_supported)
-        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
     endif()
-
-    set(OperatingSystem "Linux")
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    set(CMAKE_CXX_EXTENSIONS OFF)
-ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-
-#-------------------- DARWIN specifics
-IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    # macOS specific code with architecture distinction
+elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    set(OperatingSystem "Mac OS X")
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-Wall;-mcpu=native;-mtune=native;-ffp-contract=on>")
+    add_compile_definitions(Darwin)
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
-        # Apple Silicon (ARM64)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -flto=thin -mcpu=native -mtune=native -ffp-contract=on -fomit-frame-pointer")
-        set(OperatingSystem "Mac OS X")
-        ADD_DEFINITIONS(-DDarwin -DDarwinarm64)
+        add_compile_definitions(Darwinarm64)
         set(CMAKE_OSX_ARCHITECTURES "arm64")
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64")
-        # Apple Intel (x86_64)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -m64 -fPIC -flto=thin -mcpu=native -mtune=native -ffp-contract=on -fomit-frame-pointer")
-        set(OperatingSystem "Mac OS X")
-        ADD_DEFINITIONS(-DDarwin -DDarwinx86_64)
+        add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-m64>")
+        add_compile_definitions(Darwinx86_64)
         set(CMAKE_OSX_ARCHITECTURES "x86_64")
-    else()
-        # Fallback
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -flto=thin -mcpu=native -mtune=native -ffp-contract=on -fomit-frame-pointer")
-        set(OperatingSystem "Mac OS X")
-        ADD_DEFINITIONS(-DDarwin)
     endif()
-ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    add_compile_options("$<${_release}:-flto=thin>")
+    add_link_options("$<$<CONFIG:Release>:-flto=thin>")
+endif()
 
-option(WITH_DEBUG "Activate debug mode" OFF)
-if(WITH_DEBUG)
-	message("${Blue}-- DEBUG MODE ACTIVATED${ColourReset}")
-	add_definitions(-D__DEBUG__)
-	set(CMAKE_BUILD_TYPE DEBUG)
-	# LTO prevents LLDB/GDB from resolving debug info cleanly (replaces .o
-	# files with bitcode, degrading the debug map) -- strip it for debug
-	# builds, same as deepskyfits.
-	string(REPLACE "-flto=thin" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-	string(REPLACE "-flto" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fsanitize=address -fno-omit-frame-pointer")
-else(WITH_DEBUG)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
-endif(WITH_DEBUG)
+add_compile_options("$<${_release}:-O3;-fomit-frame-pointer>")
+# No LTO in debug: on macOS it replaces the .o files with LLVM bitcode, leaving the debug map with
+# empty OSO entries that LLDB cannot follow.
+add_compile_options("$<${_debug}:-O0;-g>")
+add_compile_definitions("$<$<CONFIG:Debug>:__DEBUG__>")
 
-message("${Green}-- CXX COMPILER:${ColourReset} ${CMAKE_CXX_COMPILER}")
-message("${Green}-- DEFAULT CXX FLAGES:${ColourReset} ${CMAKE_CXX_FLAGS}")
+if(WITH_ASAN)
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-fsanitize=address;-fno-omit-frame-pointer;-g>")
+    add_link_options(-fsanitize=address)
+endif()
 
-#-------------------- APPEND GIT VERSION TAG
-# Make a version file containing the current version from git.
+message("${BoldYellow}-- CMAKE INSTALL PREFIX : ${ColourReset}${CMAKE_INSTALL_PREFIX}")
+message("${Green}-- DeepSkyROOT :${ColourReset} ${DeepSkyROOT}")
+message("${Green}-- BUILD TYPE :${ColourReset} ${CMAKE_BUILD_TYPE}")
+message("${Green}-- CXX COMPILER :${ColourReset} ${CMAKE_CXX_COMPILER}")
+message("${Green}-- USE CXX STANDARD :${ColourReset} ${CMAKE_CXX_STANDARD}")
+if(WITH_ASAN)
+    message("${Blue}-- AddressSanitizer ACTIVATED${ColourReset}")
+endif()
+
+#-------------------- VERSION FROM THE GIT TAG
 find_package(Git)
 include(GetGitRevisionDescription)
 git_describe(VERSION --always --tags --long)
 
-#parse the version information into pieces.
 string(REGEX REPLACE "^v([0-9]+)\\..*" "\\1" VERSION_MAJOR "${VERSION}")
 string(REGEX REPLACE "^v[0-9]+\\.([0-9]+).*" "\\1" VERSION_MINOR "${VERSION}")
 string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" VERSION_PATCH "${VERSION}")
 string(REGEX REPLACE "^v[0-9]+\\.[0-9]+\\.[0-9]+.(-*)" "\\1" VERSION_SHA1 "${VERSION}")
 set(VERSION_SHORT "v${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
-message("-- PKG VERSION : " ${VERSION})
-message("-- PKG VERSION : " ${VERSION_SHORT})
-message("-- PKG MAJOR   : " ${VERSION_MAJOR})
-message("-- PKG MINOR   : " ${VERSION_MINOR})
-message("-- PKG PATCH   : " ${VERSION_PATCH})
-message("-- PKG SHA1    : " ${VERSION_SHA1})
+message("-- PKG VERSION : ${VERSION} (${VERSION_SHORT}, sha1 ${VERSION_SHA1})")
 
-set(CMAKE_PROJECT_VERSION "${VERSION}")
+set(CMAKE_PROJECT_VERSION       "${VERSION}")
 set(CMAKE_PROJECT_VERSION_MAJOR "${VERSION_MAJOR}")
 set(CMAKE_PROJECT_VERSION_MINOR "${VERSION_MINOR}")
 set(CMAKE_PROJECT_VERSION_PATCH "${VERSION_PATCH}")
 
-configure_file(${CMAKE_MODULE_PATH}/DSS_version.cxx.in ${CMAKE_CURRENT_BINARY_DIR}/src/DSS_version.cxx)
-set(version_file "${CMAKE_CURRENT_BINARY_DIR}/src/DSS_version.cxx")
-
-configure_file(${CMAKE_MODULE_PATH}/gTest_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/test/gTest_version.h)
-
-#-------------------- Inclusion des en-têtes publics
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/test ./include ./include/DSTCore)
-
-message("-- PROJECT DIR: " ${CMAKE_SOURCE_DIR})
-message("-- PROJECT BINARY DIR: " ${PROJECT_BINARY_DIR})
-message("-- CURRENT BINARY DIR: " ${CMAKE_CURRENT_BINARY_DIR})
-message("-- CMAKE SOURCE DIR  : " ${CMAKE_SOURCE_DIR})
-
-
-#-------------------- Find Boost dependencies
-if(!${COMPILER_SUPPORTS_CXX17})
-    message("${Red}----------- SEARCH BOOST Framework -----------${ColourReset}")
-    find_package(Boost REQUIRED COMPONENTS filesystem chrono)
-    if(${Boost_FOUND})
-        message("${Blue}-- Boost INC DIR ${ColourReset} ${Boost_INCLUDE_DIRS}")
-        message("${Blue}-- Boost LIBRARY DIR ${ColourReset} ${Boost_LIBRARY_DIRS}")
-        message("${Blue}-- Boost LIB ${ColourReset} ${Boost_LIBRARIES}")
-    endif(${Boost_FOUND})
-    set(Boost_USE_MULTITHREADED ON)
-endif(!${COMPILER_SUPPORTS_CXX17})
-
-#-------------------- LIST SOURCE FILE
-
-file(GLOB CORE_SRC "src/*.cxx")
-file(GLOB GEN_SRC "${CMAKE_CURRENT_BINARY_DIR}/src/*.cxx")
-file(GLOB CORE_HEADER "include/DSTCore/*.h")
-file(GLOB GEN_HEADER "${CMAKE_CURRENT_BINARY_DIR}/test/*.h")
-file(GLOB TEST_SRC "test/*.cxx")
-
-set(HEADER_FILES ${CORE_HEADER})
-
-#-------------------- Configuration de la bibliothèque
-
-add_library(
-    DSTCore
-    SHARED
-    ${CORE_SRC}
-    ${CORE_HEADER}
-    ${version_file}
-)
-
-# Propagate the git tag to the library. A clone without a reachable tag (e.g. a shallow CI clone)
-# has no numeric version: the library stays unversioned and no CMake package is installed.
+# A clone without a reachable tag (e.g. a shallow CI clone) has no numeric version: the library
+# stays unversioned and no CMake package is installed.
 if(VERSION MATCHES "^v[0-9]+\\.[0-9]+\\.[0-9]+")
     set(DSTCore_NUMERIC_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
-    set_target_properties(DSTCore PROPERTIES
-        VERSION   "${DSTCore_NUMERIC_VERSION}"
-        SOVERSION "${VERSION_MAJOR}"
-    )
+    set(PROJECT_VERSION "${DSTCore_NUMERIC_VERSION}")
 else()
     message(WARNING "No version tag found (git describe gave '${VERSION}'): DSTCore will not be versioned")
 endif()
 
-#-------------------- Configuration des test
-add_subdirectory(googletest   EXCLUDE_FROM_ALL)
-include_directories(${PARENT_PATH_OF_GTEST}/googltest/googltest/include)
-enable_testing()
+# Generated sources stay in the build directory
+set(GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
+configure_file(${CMAKE_SOURCE_DIR}/modules/DSS_version.cxx.in ${GENERATED_DIR}/src/DSS_version.cxx)
+configure_file(${CMAKE_SOURCE_DIR}/modules/gTest_version.h.in ${GENERATED_DIR}/test/gTest_version.h)
 
-foreach( test_source_file ${TEST_SRC} )
-	get_filename_component( tSRC ${test_source_file} NAME_WE)
-	add_executable(
-		${tSRC}
-		${test_source_file}
-	)
+#-------------------- libDSTCore
+message("${Red}----------- libDSTCore -----------${ColourReset}")
+set(DSTCORE_SOURCES
+    src/OptionManager.cxx
+    ${GENERATED_DIR}/src/DSS_version.cxx
+)
+file(GLOB DSTCORE_PUBLIC_HEADERS ${CMAKE_SOURCE_DIR}/include/DSTCore/*.h)
 
-    if(COMPILER_SUPPORTS_CXX17)
-        target_link_libraries( ${tSRC} DSTCore gtest gtest_main)
-    else(COMPILER_SUPPORTS_CXX17)
-        target_link_libraries( ${tSRC} DSTCore ${Boost_LIBRARIES} gtest gtest_main)
-    endif(COMPILER_SUPPORTS_CXX17)
+add_library(DSTCore SHARED ${DSTCORE_SOURCES} ${DSTCORE_PUBLIC_HEADERS})
+if(DSTCore_NUMERIC_VERSION)
+    set_target_properties(DSTCore PROPERTIES
+        VERSION   "${DSTCore_NUMERIC_VERSION}"
+        SOVERSION "${VERSION_MAJOR}"
+    )
+endif()
+target_include_directories(DSTCore PUBLIC ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/DSTCore)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set_target_properties(DSTCore PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_RPATH}")
 
+#-------------------- Tests
+if(BUILD_TESTS)
+    message("${Red}----------- GoogleTest -----------${ColourReset}")
+    if(NOT EXISTS ${CMAKE_SOURCE_DIR}/googletest/CMakeLists.txt)
+        message(FATAL_ERROR "${BoldRed}googletest is missing: run 'git submodule update --init' (or configure with -DBUILD_TESTS=OFF)${ColourReset}")
+    endif()
+    set(DSTCORE_TESTS ON)
+    enable_testing()
+    set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+    set(BUILD_GMOCK   OFF CACHE BOOL "" FORCE)
+    set(BUILD_SHARED_LIBS OFF)
+    add_subdirectory(googletest EXCLUDE_FROM_ALL)
+    include(GoogleTest)
 
-endforeach( test_source_file ${TEST_SRC} )
+    # The tests run from the build directory: whatever they write stays there
+    file(GLOB TEST_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/test/gTest_*.cxx)
+    set(TEST_NAMES "")
+    foreach(test_source IN LISTS TEST_SOURCES)
+        get_filename_component(tname ${test_source} NAME_WE)
+        list(APPEND TEST_NAMES ${tname})
+        add_executable(${tname} ${test_source})
+        target_link_libraries(${tname} PRIVATE DSTCore gtest gtest_main)
+        target_include_directories(${tname} PRIVATE ${GENERATED_DIR}/test)
+        gtest_discover_tests(${tname} WORKING_DIRECTORY ${CMAKE_BINARY_DIR} PROPERTIES TIMEOUT 300)
+    endforeach()
+    message("${Blue}-- Test executables ${ColourReset} ${TEST_NAMES} (run with ctest)")
+else()
+    set(DSTCORE_TESTS OFF)
+endif()
 
-include(GoogleTest)
-
-foreach( test_source_file ${TEST_SRC} )
-    get_filename_component( tSRC ${test_source_file} NAME_WE)
-    gtest_discover_tests(${tSRC})
-endforeach( test_source_file ${TEST_SRC} )
-
-#-------------------- CONFIGURATION OF DOXYGEN DOC GENERATION
-
+#-------------------- Doxygen documentation (target: doc, written in build/doc)
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/DSL.Doxyfile ${CMAKE_CURRENT_BINARY_DIR}/DSL.Doxyfile @ONLY)
+    # The Doxyfile paths are relative to the sources: run there, but write in the build directory
+    file(READ ${CMAKE_SOURCE_DIR}/DSL.Doxyfile _doxyfile)
+    string(APPEND _doxyfile "\nOUTPUT_DIRECTORY = ${CMAKE_BINARY_DIR}/doc\n")
+    file(WRITE ${GENERATED_DIR}/DSL.Doxyfile "${_doxyfile}")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/DSL.Doxyfile)
     add_custom_target(doc
-    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/DSL.Doxyfile
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating API documentation with Doxygen" VERBATIM
-)
-endif(DOXYGEN_FOUND)
+        COMMAND ${DOXYGEN_EXECUTABLE} ${GENERATED_DIR}/DSL.Doxyfile
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Generating API documentation with Doxygen in ${CMAKE_BINARY_DIR}/doc"
+        VERBATIM
+    )
+endif()
 
-
-
-#-------------------- ADD DISTCLEAN CUSTOM TARGET
-
-add_custom_target(distclean)
-set(DISTCLEANED
-cmake.depends
-cmake.check_depends
-CMakeCache.txt
-cmake.check_cache
-CMakeTmp
-${version_file}
-Makefile
-CMakeFiles
-*.cmake
-./build/lib
-./build/exe
-./build/test
-./build/cmake
-./doc
-./googletest/CMakeFiles
-./googletest/Makefile
-./googletest/*.cmake
-./lib
-./bin
+#-------------------- Installation
+install(FILES ${DSTCORE_PUBLIC_HEADERS} DESTINATION include/DSTCore)
+install(TARGETS DSTCore
+    RUNTIME DESTINATION exe
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
 )
 
-add_custom_target(
-    distclean_run
-    COMMENT "distribution clean"
-    COMMAND ${CMAKE_COMMAND} -E echo "distribution clean"
-    COMMAND rm -Rf ${DISTCLEANED}
-    COMMAND /usr/bin/env bash -c "test -e install_manifest.txt && xargs rm -f < install_manifest.txt || true"
-    COMMAND /usr/bin/env bash -c "test -e install_manifest.txt && rm -f install_manifest.txt || true"
-    VERBATIM
-)
-add_dependencies(distclean distclean_run)
+if(DSTCore_NUMERIC_VERSION)
+    # CMake package, so that dependent projects can call find_package(DSTCore <version>)
+    include(CMakePackageConfigHelpers)
+    set(DSTCore_CMAKE_DIR lib/cmake/DSTCore)
+    configure_package_config_file(
+        ${CMAKE_SOURCE_DIR}/modules/DSTCoreConfig.cmake.in
+        ${GENERATED_DIR}/DSTCoreConfig.cmake
+        INSTALL_DESTINATION ${DSTCore_CMAKE_DIR}
+    )
+    write_basic_package_version_file(
+        ${GENERATED_DIR}/DSTCoreConfigVersion.cmake
+        VERSION ${DSTCore_NUMERIC_VERSION}
+        COMPATIBILITY AnyNewerVersion
+    )
+    install(FILES
+        ${GENERATED_DIR}/DSTCoreConfig.cmake
+        ${GENERATED_DIR}/DSTCoreConfigVersion.cmake
+        DESTINATION ${DSTCore_CMAKE_DIR}
+    )
 
-
-#-------------------- Installation proceedure
-if(CMAKE_INSTALL_PREFIX)
-    INSTALL(FILES ${CORE_HEADER} DESTINATION include/DSTCore)
-    INSTALL(TARGETS DSTCore
-		RUNTIME DESTINATION exe
-		LIBRARY DESTINATION lib
-		ARCHIVE DESTINATION lib
-)
-
-    if(DSTCore_NUMERIC_VERSION)
-        # CMake package, so that dependent projects can call find_package(DSTCore <version>)
-        include(CMakePackageConfigHelpers)
-        set(DSTCore_CMAKE_DIR lib/cmake/DSTCore)
-        configure_package_config_file(
-            ${CMAKE_SOURCE_DIR}/modules/DSTCoreConfig.cmake.in
-            ${CMAKE_CURRENT_BINARY_DIR}/build/cmake/DSTCoreConfig.cmake
-            INSTALL_DESTINATION ${DSTCore_CMAKE_DIR}
-        )
-        write_basic_package_version_file(
-            ${CMAKE_CURRENT_BINARY_DIR}/build/cmake/DSTCoreConfigVersion.cmake
-            VERSION ${DSTCore_NUMERIC_VERSION}
-            COMPATIBILITY AnyNewerVersion
-        )
-        INSTALL(FILES
-            ${CMAKE_CURRENT_BINARY_DIR}/build/cmake/DSTCoreConfig.cmake
-            ${CMAKE_CURRENT_BINARY_DIR}/build/cmake/DSTCoreConfigVersion.cmake
-            DESTINATION ${DSTCore_CMAKE_DIR}
-        )
-
-        # CMake never removes files from the install directory: drop the versioned libraries
-        # (libDSTCore.2.0.1.dylib, libDSTCore.so.2.0.1, ...) left behind by previous installs.
-        install(CODE "set(DSTCore_KEEP_VERSIONS \"${DSTCore_NUMERIC_VERSION};${VERSION_MAJOR}\")")
-        install(CODE [[
-            file(GLOB _dss_libs "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/libDSTCore.*")
-            foreach(_dss_lib ${_dss_libs})
-                get_filename_component(_dss_name "${_dss_lib}" NAME)
-                if(_dss_name MATCHES "^libDSTCore\\.(so\\.)?([0-9.]*[0-9])(\\.dylib)?$")
-                    list(FIND DSTCore_KEEP_VERSIONS "${CMAKE_MATCH_2}" _dss_keep)
-                    if(_dss_keep EQUAL -1)
-                        message(STATUS "Removing old library: ${_dss_lib}")
-                        file(REMOVE "${_dss_lib}")
-                    endif()
+    # CMake never removes files from the install directory: drop the versioned libraries
+    # (libDSTCore.2.0.1.dylib, libDSTCore.so.2.0.1, ...) left behind by previous installs.
+    install(CODE "set(DSTCore_KEEP_VERSIONS \"${DSTCore_NUMERIC_VERSION};${VERSION_MAJOR}\")")
+    install(CODE [[
+        file(GLOB _dss_libs "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/libDSTCore.*")
+        foreach(_dss_lib ${_dss_libs})
+            get_filename_component(_dss_name "${_dss_lib}" NAME)
+            if(_dss_name MATCHES "^libDSTCore\\.(so\\.)?([0-9.]*[0-9])(\\.dylib)?$")
+                list(FIND DSTCore_KEEP_VERSIONS "${CMAKE_MATCH_2}" _dss_keep)
+                if(_dss_keep EQUAL -1)
+                    message(STATUS "Removing old library: ${_dss_lib}")
+                    file(REMOVE "${_dss_lib}")
                 endif()
-            endforeach()
-        ]])
-    endif()
-endif(CMAKE_INSTALL_PREFIX)
+            endif()
+        endforeach()
+    ]])
+endif()
+
+#-------------------- Summary
+message("${BoldGreen}----------- DeepSkySys ${VERSION} configured -----------${ColourReset}")
+message("${Green}-- Build directory  :${ColourReset} ${CMAKE_BINARY_DIR}")
+message("${Green}-- Build type       :${ColourReset} ${CMAKE_BUILD_TYPE}")
+message("${Green}-- AddressSanitizer :${ColourReset} ${WITH_ASAN}")
+message("${Green}-- Tests            :${ColourReset} ${DSTCORE_TESTS}")
+message("${Green}-- DSTCore          :${ColourReset} ${DSTCore_NUMERIC_VERSION}")
+message("${Green}-- Install prefix   :${ColourReset} ${CMAKE_INSTALL_PREFIX}")
+if(WITH_ASAN)
+    message("${Yellow}--                    AddressSanitizer build: installing it replaces the release libDSTCore${ColourReset}")
+endif()
+message("${BoldGreen}-------------------------------------------------${ColourReset}")
