@@ -1,4 +1,6 @@
-![Project logo](DeepSkySysLogo.png)
+<p align="center">
+  <img src="DeepSkySysLogo.svg" alt="DeepSkyMath" width="300">
+</p>
 
 # DeepSkySys
 
