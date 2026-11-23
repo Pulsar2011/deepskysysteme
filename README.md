@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="DeepSkySysLogo.svg" alt="DeepSkyMath" width="300">
+  <img src="DeepSkySysLogo.png" alt="DeepSkySys" width="300">
 </p>
 
 # DeepSkySys
