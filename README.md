@@ -27,6 +27,13 @@ Options: `-DCMAKE_INSTALL_PREFIX=<path>` (default: `$DeepSkyROOT`, or the parent
 Former in-source builds left files in the sources (`CMakeCache.txt`, `Makefile`, `lib/`, ...); remove them once
 with `cmake -P cmake/CleanInSourceBuild.cmake`.
 
+--------------------------------------------------------------------------------
+# C++ API reference
+
+## Doxygen website:
+- https://deepskyfits-4be303.pages.in2p3.fr/
+
+--------------------------------------------------------------------------------
 ## License
 
 Licensed under the [PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/): free for noncommercial use. Commercial use requires a separate licence from the author. See [LICENSE.md](LICENSE.md).
