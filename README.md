@@ -1,4 +1,4 @@
-![Project logo](DeepSkySystemLogo.png)
+![Project logo](DeepSkySysLogo.png)
 
 # DeepSkySys
 
