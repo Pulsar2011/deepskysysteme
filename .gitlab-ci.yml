@@ -25,6 +25,7 @@ variables:
 stages:
 - build
 - test
+- deploy
 
 .install_packages: &install_packages
   - apt-get update -qq
@@ -51,3 +52,24 @@ test:
   before_script: *install_packages
   script:
   - ctest --preset default
+
+create-pages:
+  stage: deploy
+  needs:
+    - job: build
+      artifacts: true
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y -qq --no-install-recommends cmake libgsl-dev clang llvm doxygen graphviz npm
+  script:
+    - mkdir public
+    - npm install mathjax@2
+    # Configure again: the build job had no Doxygen, so its build tree has no doc target (nothing is recompiled)
+    - cmake --preset default -DCI_CIWORKER=ON
+    - cmake --build --preset default --target doc
+    - mv build/doc/html/* ./public
+    - mv node_modules/mathjax ./public/mathjax
+    - ls public
+  pages:
+    expire_in: 1 week
+
